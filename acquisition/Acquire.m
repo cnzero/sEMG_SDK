@@ -55,6 +55,7 @@ function output = Acquire(DEBUG, Sensor, Channel, Write)
 				t = timer('Period', .1, ...
 						  'ExecutionMode', 'fixedSpacing', ...
 						  'TimerFcn', {@UpdatePlots, plotHandlesEMG});
+				start(t);
 			end
 
 			% try to connect
@@ -97,6 +98,7 @@ function output = Acquire(DEBUG, Sensor, Channel, Write)
 				t = timer('Period', .1, ...
 						  'ExecutionMode', 'fixedSpacing', ...
 						  'TimerFcn', {@UpdatePlots, plotHandlesEMG});
+				start(t);
 			end
 
 			% try to connect
@@ -136,6 +138,7 @@ function output = Acquire(DEBUG, Sensor, Channel, Write)
 				t = timer('Period', .1, ...
 						  'ExecutionMode', 'fixedSpacing', ...
 						  'TimerFcn', {@UpdatePlots, plotHandlesACC});
+				start(t);
 			end
 			% try to connect
 			try
@@ -161,7 +164,72 @@ function output = Acquire(DEBUG, Sensor, Channel, Write)
 	% send commands to start data acquiring streaming...
 	fprintf(commonObject, sprintf(['START\r\n\r']));
 
-	
+
+function ReadAndPlotEMG(interfaceObjectEMG)
+	global data_EMG;
+
+	bytesReady = interfaceObjectEMG.BytesAvailable;
+	bytesReady = bytesReady - mod(bytesReady, 1728); 
+										%bytesReady chunks integral multiple 1728
+	if (bytesReady == 0)
+		return 					%not enought 1728 data is avaiable.
+	end
+
+	data = cast(fread(interfaceObjectEMG, bytesReady), 'uint8');%fread(fid, size)
+	data = typecast(data, 'single');
+	%summary: read from TCPIP port 1728 multiple data 
+	%		  and store them in [data]
+	% 		  every datum with type [single] needs 4 bytes
+
+	%An acquire window with length 32832 is moving....
+	if(size(data_EMG, 1) < 32832) %32832 = 19 * 1728
+		data_EMG = [data_EMG; data];
+	else
+		data_EMG = [data_EMG(size(data, 1)+1 : size(data_EMG, 1)); data];
+	end
+
+	%--------------Save acquired data to the .txt files.
+	global TR_handles;
+	%-For short
+	CHANNEL = TR_handles.Data_NewConfig_Addsensor_ChannelsValue;
+	if TR_handles.Data_Action_Flag
+		% disp('Acquiring data, and saving...');
+		for index=1:TR_handles.Channel_Counts
+			data_index = data(CHANNEL(index):16:end);
+			%save to file
+			dlmwrite([TR_handles.Path_EMG_Folder, ...
+					 '\Channel', num2str(CHANNEL(index)),'.txt'], ...
+					data_index, ...
+					'precision', '%.10f', ...
+					'delimiter', '\n', ...
+					'-append');
+		end
+	end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function clearHandle(a_handle)
 	if isvalid(a_handle)
 		fclose(a_handle);
