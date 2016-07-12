@@ -235,7 +235,86 @@ function ReadAndPlotEMG(interfaceObjectEMG)
 
 
 
+function ReadAndPlotACC(interfaceObjectACC)
+	% if less than 2 samples for one channel, wait and check next time.
+	% 384bytes = 2samples x 4bytes/sample x 48channels  
+	bytesReady = interfaceObjectACC.BytesAvailable;
+	bytesReady = bytesReady - mod(bytesReady, 384);
+	if (bytesReady == 0)
+		return
+	end
 
+	% get data from tcpip cache
+	data = cast(fread(interfaceObjectACC, bytesReady), 'uint8');
+	data = typecast(data, 'single'); % single == 4 bytes.
+	% length must be multi-48channel
+
+	% DEBUG -- plot on 4x4 axes of ACC plot figures.
+	if DEBUG
+		global data_ACC;
+		% global data_ACC is prepared for plot.
+		% there is overlap in data_ACC for smothing displaying.
+		if(size(data_ACC, 1) < 7296) %7296 = 19 * 384 
+			data_ACC = [data_ACC; data];
+		else
+			data_ACC = [data_ACC(size(data, 1)+1 : size(data_ACC, 1)); data];
+		end
+	end
+
+	% take samples apart with selected Channel sequences.
+	% data  multi-48
+	data_ch_all = reshape(data, 48, []); 
+	% 48xn
+	Channel_transfer = [];
+	for index = 1: length(Channel)
+		Channel_transfer = [Channel_transfer, ...
+							Channel(index)*3 - 2, ...
+							Channel(index)*3 - 1, ...
+							Channel(index)*3];
+	end
+	% Channel, 		   [3,        7]
+	% Channel_transfer [7, 8, 9,  19, 20, 21]
+	data_ch_selected = data_ch_all(Channel_transfer, :);
+	% Channel, input parameter, [3, 7] for example
+	% channel 3
+	% data_ch_selected(1, :), for channel 3_x
+	% data_ch_selected(2, :), for channel 3_y
+	% data_ch_selected(3, :), for channel 3_z
+	% channel 7
+	% data_ch_selected(4, :), for channel 7_x
+	% data_ch_selected(5, :), for channel 7_y
+	% data_ch_selected(6, :), for channel 7_z
+	% Just an understandable example. 
+
+	% Write == 1 for Write acquired data in txt files with channel name.
+	if Write
+		% newly build a folder with the name of current time
+		c = clock;
+		folder_name = [num2str(c(1)), ... % year
+		               '_', ...
+		               num2str(c(2)), ... % month
+		               '_', ...
+		               num2str(c(3)), ... % day
+		               '_', ...
+		               num2str(c(4)), ... % hour
+		               '_', ...
+		               num2str(c(5)), ... % minute
+		               '_', ...
+		               num2str(fix(c(6)))]; % second
+		mkdir(folder_name);
+		% newly build a folder with the name of ACC
+		mkdir([folder_name, '\ACC'])
+		% there is a text file with name of channel3.txt for example.
+		for index = 1:length(Channel)
+			data_ch_each = data_ch_selected(index, :);
+			% save to file
+			dlmwrite([folder_name, '\ACC', '\Channel', ...
+				      num2str(Channel(index)), '.txt'], ...
+				      data_ch_each, ...
+				      'precision', '%.10f', ...
+					  'delimiter', '\n', ...
+					  '-append');
+	end
 
 
 
