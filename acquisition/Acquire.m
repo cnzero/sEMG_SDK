@@ -166,44 +166,71 @@ function output = Acquire(DEBUG, Sensor, Channel, Write)
 
 
 function ReadAndPlotEMG(interfaceObjectEMG)
-	global data_EMG;
-
+	% if less than 27 samples for one channel, wait and check next time.
+	% 1728bytes = 27samples x 4bytes/sample x 16channels  
 	bytesReady = interfaceObjectEMG.BytesAvailable;
-	bytesReady = bytesReady - mod(bytesReady, 1728); 
-										%bytesReady chunks integral multiple 1728
+	bytesReady = bytesReady - mod(bytesReady, 1728);
 	if (bytesReady == 0)
-		return 					%not enought 1728 data is avaiable.
+		return
 	end
 
-	data = cast(fread(interfaceObjectEMG, bytesReady), 'uint8');%fread(fid, size)
-	data = typecast(data, 'single');
-	%summary: read from TCPIP port 1728 multiple data 
-	%		  and store them in [data]
-	% 		  every datum with type [single] needs 4 bytes
+	% get data from tcpip cache
+	data = cast(fread(interfaceObjectEMG, bytesReady), 'uint8');
+	data = typecast(data, 'single'); % single == 4 bytes.
+	% length must be multi-16channel
 
-	%An acquire window with length 32832 is moving....
-	if(size(data_EMG, 1) < 32832) %32832 = 19 * 1728
-		data_EMG = [data_EMG; data];
-	else
-		data_EMG = [data_EMG(size(data, 1)+1 : size(data_EMG, 1)); data];
-	end
-
-	%--------------Save acquired data to the .txt files.
-	global TR_handles;
-	%-For short
-	CHANNEL = TR_handles.Data_NewConfig_Addsensor_ChannelsValue;
-	if TR_handles.Data_Action_Flag
-		% disp('Acquiring data, and saving...');
-		for index=1:TR_handles.Channel_Counts
-			data_index = data(CHANNEL(index):16:end);
-			%save to file
-			dlmwrite([TR_handles.Path_EMG_Folder, ...
-					 '\Channel', num2str(CHANNEL(index)),'.txt'], ...
-					data_index, ...
-					'precision', '%.10f', ...
-					'delimiter', '\n', ...
-					'-append');
+	% DEBUG -- plot on 4x4 axes of EMG plot figures.
+	if DEBUG
+		global data_EMG;
+		% global data_EMG is prepared for plot.
+		% there is overlap in data_EMG for smothing displaying.
+		if(size(data_EMG, 1) < 32832) %32832 = 19 * 1728
+			data_EMG = [data_EMG; data];
+		else
+			data_EMG = [data_EMG(size(data, 1)+1 : size(data_EMG, 1)); data];
 		end
+	end
+
+	% take samples apart with selected Channel sequences.
+	data_ch_all = reshape(data, 16, []); 
+	data_ch_selected = data_ch_all(Channel, :);
+	% Channel, input parameter, [3, 7, 9, 15] for example
+	% data_cha_selected,
+	% 4xn
+	% data_ch_selected(1, :), for channel 3
+	% data_ch_selected(2, :), for channel 7
+	% data_ch_selected(3, :), for channel 9
+	% data_ch_selected(4, :), for channel 15
+	% Just an understandable example. 
+
+	% Write == 1 for Write acquired data in txt files with channel name.
+	if Write
+		% newly build a folder with the name of current time
+		c = clock;
+		folder_name = [num2str(c(1)), ... % year
+		               '_', ...
+		               num2str(c(2)), ... % month
+		               '_', ...
+		               num2str(c(3)), ... % day
+		               '_', ...
+		               num2str(c(4)), ... % hour
+		               '_', ...
+		               num2str(c(5)), ... % minute
+		               '_', ...
+		               num2str(fix(c(6)))]; % second
+		mkdir(folder_name);
+		% newly build a folder with the name of EMG/ACC
+		mkdir([folder_name, '\EMG'])
+		% there is a text file with name of channel3.txt for example.
+		for index = 1:length(Channel)
+			data_ch_each = data_ch_selected(index, :);
+			% save to file
+			dlmwrite([folder_name, '\EMG', '\Channel', ...
+				      num2str(Channel(index)), '.txt'], ...
+				      data_ch_each, ...
+				      'precision', '%.10f', ...
+					  'delimiter', '\n', ...
+					  '-append');
 	end
 
 
