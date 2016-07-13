@@ -73,7 +73,7 @@ function Acquire(DEBUG, Sensor, Channel, Write)
 			interfaceObjectACC = tcpip(HOST_IP, 50042, ...
 									   'InputBufferSize', 6400, ...
 									   'BytesAvailableFcnMode', 'byte', ...
-									   'BytesAvailableFcnCount', 1728, ...
+									   'BytesAvailableFcnCount', 384, ...
 									   'BytesAvailableFcn', @ReadAndPlotACC);	
 			% if DEBUG, 
 			% figure of data displaying settings
@@ -165,7 +165,7 @@ function Acquire(DEBUG, Sensor, Channel, Write)
 			interfaceObjectACC = tcpip(HOST_IP, 50042, ...
 									   'InputBufferSize', 6400, ...
 									   'BytesAvailableFcnMode', 'byte', ...
-									   'BytesAvailableFcnCount', 1728, ...
+									   'BytesAvailableFcnCount', 384, ...
 									   'BytesAvailableFcn', @ReadAndPlotACC);
 			% if DEBUG, 
 			% figure of data displaying settings
@@ -317,10 +317,7 @@ function ReadAndPlotACC(interfaceObjectACC)
 	if Write
 		% newly build a folder with the name of ACC
 		global folder_name;
-		% ==================================================wrong==========
-		% do not need newly-build a folder every time a cache is available.
-
-		% there is a text file with name of channel3.txt for example.
+		% there is a text file with name of channel3x.txt for example.
 		for index = 1:length(Channel)
 			acc_str = {'x', 'y', 'z'};
 			for xyz=1 : 3
@@ -336,6 +333,7 @@ function ReadAndPlotACC(interfaceObjectACC)
 			% Channel3x.txt
 			% Channel3y.txt
 			% Channel3z.txt
+		end
 	end
 
 
