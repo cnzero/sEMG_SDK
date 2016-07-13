@@ -2,7 +2,7 @@
 % 			get the acquiring data online and some parameters settings
 
 % parameters settings
-% 			DEBUG:
+% 			DebugPlot:
 % 				 1: True, the origin result of Official SDK.
 % 				 0: No figures
 % 			Sensor:
@@ -19,7 +19,7 @@
 
 
 
-function Acquire(DEBUG, Sensor, Channel, Write)
+function Acquire(DebugPlot, Sensor, Channel, Write)
 
 	% ----Preparation of Write data into a folder name.---
 	if Write
@@ -68,16 +68,16 @@ function Acquire(DEBUG, Sensor, Channel, Write)
 									   'InputBufferSize', 6400, ...
 									   'BytesAvailableFcnMode', 'byte', ...
 									   'BytesAvailableFcnCount', 1728, ...
-									   'BytesAvailableFcn', @ReadAndPlotEMG);
+									   'BytesAvailableFcn', {@ReadAndPlotEMG, DebugPlot, Channel, Write});
 			% ACC connection initialization
 			interfaceObjectACC = tcpip(HOST_IP, 50042, ...
 									   'InputBufferSize', 6400, ...
 									   'BytesAvailableFcnMode', 'byte', ...
 									   'BytesAvailableFcnCount', 384, ...
-									   'BytesAvailableFcn', @ReadAndPlotACC);	
-			% if DEBUG, 
+									   'BytesAvailableFcn', {@ReadAndPlotACC, DebugPlot, Channel, Write});	
+			% if DebugPlot, 
 			% figure of data displaying settings
-			if DEBUG
+			if DebugPlot
 				[figureHandleEMG, plotHandlesEMG] = PlotEMGsettings();
 				[figureHandleACC, plotHandlesACC] = PlotACCsettings();
 				% both
@@ -102,7 +102,7 @@ function Acquire(DEBUG, Sensor, Channel, Write)
 				clearHandle(interfaceObjectACC);
 				clearHandle(commonObject);
 				% close figure EMG/ACC and timer t
-				if DEBUG
+				if DebugPlot
 					delete(figureHandleEMG);
 					delete(figureHandleACC);
 					if isvalid(t)
@@ -121,10 +121,10 @@ function Acquire(DEBUG, Sensor, Channel, Write)
 									   'InputBufferSize', 6400, ...
 									   'BytesAvailableFcnMode', 'byte', ...
 									   'BytesAvailableFcnCount', 1728, ...
-									   'BytesAvailableFcn', @ReadAndPlotEMG);
-			% if DEBUG, 
+									   'BytesAvailableFcn', {@ReadAndPlotEMG, DebugPlot, Channel, Write});
+			% if DebugPlot, 
 			% figure of data displaying settings
-			if DEBUG
+			if DebugPlot
 				[figureHandleEMG, plotHandlesEMG] = PlotEMGsettings();
 				% EMG
 				plotinfo.Channel = Channel;
@@ -146,7 +146,7 @@ function Acquire(DEBUG, Sensor, Channel, Write)
 				clearHandle(interfaceObjectEMG)
 				clearHandle(commonObject);
 				% close figure EMG and timer t;
-				if DEBUG
+				if DebugPlot
 					delete(figureHandleEMG);
 					if isvalid(t)
 						stop(t);
@@ -164,10 +164,10 @@ function Acquire(DEBUG, Sensor, Channel, Write)
 									   'InputBufferSize', 6400, ...
 									   'BytesAvailableFcnMode', 'byte', ...
 									   'BytesAvailableFcnCount', 384, ...
-									   'BytesAvailableFcn', @ReadAndPlotACC);
-			% if DEBUG, 
+									   'BytesAvailableFcn', {@ReadAndPlotACC, DebugPlot, Channel, Write});
+			% if DebugPlot, 
 			% figure of data displaying settings
-			if DEBUG
+			if DebugPlot
 				[figureHandleACC, plotHandlesACC] = PlotACCsettings();
 				% ACC
 				plotinfo.Channel = Channel;
@@ -188,7 +188,7 @@ function Acquire(DEBUG, Sensor, Channel, Write)
 				clearHandle(interfaceObjectACC);
 				clearHandle(commonObject);
 				% close figure ACC and timer t
-				if DEBUG
+				if DebugPlot
 					delete(figureHandleACC);
 					if isvalid(t)
 						stop(t);
@@ -203,7 +203,7 @@ function Acquire(DEBUG, Sensor, Channel, Write)
 	fprintf(commonObject, sprintf(['START\r\n\r']));
 
 
-function ReadAndPlotEMG(interfaceObjectEMG)
+function ReadAndPlotEMG(interfaceObjectEMG, event, DebugPlot, Channel, Write)
 	% if less than 27 samples for one channel, wait and check next time.
 	% 1728bytes = 27samples x 4bytes/sample x 16channels  
 	bytesReady = interfaceObjectEMG.BytesAvailable;
@@ -217,8 +217,8 @@ function ReadAndPlotEMG(interfaceObjectEMG)
 	data = typecast(data, 'single'); % single == 4 bytes.
 	% length must be multi-16channel
 
-	% DEBUG -- plot on 4x4 axes of EMG plot figures.
-	if DEBUG
+	% DebugPlot -- plot on 4x4 axes of EMG plot figures.
+	if DebugPlot == 1
 		global data_EMG;
 		% global data_EMG is prepared for plot.
 		% there is overlap in data_EMG for smothing displaying.
@@ -260,7 +260,7 @@ function ReadAndPlotEMG(interfaceObjectEMG)
 
 
 
-function ReadAndPlotACC(interfaceObjectACC)
+function ReadAndPlotACC(interfaceObjectACC, event, DebugPlot, Channel, Write)
 	% if less than 2 samples for one channel, wait and check next time.
 	% 384bytes = 2samples x 4bytes/sample x 48channels  
 	bytesReady = interfaceObjectACC.BytesAvailable;
@@ -274,8 +274,8 @@ function ReadAndPlotACC(interfaceObjectACC)
 	data = typecast(data, 'single'); % single == 4 bytes.
 	% length must be multi-48channel
 
-	% DEBUG -- plot on 4x4 axes of ACC plot figures.
-	if DEBUG
+	% DebugPlot -- plot on 4x4 axes of ACC plot figures.
+	if DebugPlot == 1
 		global data_ACC;
 		% global data_ACC is prepared for plot.
 		% there is overlap in data_ACC for smothing displaying.
