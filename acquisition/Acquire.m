@@ -110,9 +110,8 @@ function Acquire(DEBUG, Sensor, Channel, Write)
 						delete(t);
 					end
 				end
-				error('connection error: ...
-					   please start the Delsys Trigno Control Utility. ...
-					   And Try Again.');
+				error('connection error: please start the Delsys Trigno Control Utility. And Try Again.');
+            end
 		case 2 % only EMG
 			global data_EMG;
 			data_EMG = [];
@@ -154,9 +153,8 @@ function Acquire(DEBUG, Sensor, Channel, Write)
 						delete(t);
 					end
 				end
-				error('connection error: ...
-					   please start the Delsys Trigno Control Utility. ...
-					   And Try Again.');
+				error('connection error: please start the Delsys Trigno Control Utility.And Try Again.');
+            end
 		case 3 % only ACC
 			global data_ACC;
 			data_ACC = [];
@@ -197,9 +195,8 @@ function Acquire(DEBUG, Sensor, Channel, Write)
 						delete(t);
 					end
 				end
-				error('connection error: ...
-					   please start the Delsys Trigno Control Utility. ...
-					   And Try Again.');
+				error('connection error: please start the Delsys Trigno Control Utility. And Try Again.');
+            end
 	end
 
 	% send commands to start data acquiring streaming...
@@ -258,6 +255,7 @@ function ReadAndPlotEMG(interfaceObjectEMG)
 				      'precision', '%.10f', ...
 					  'delimiter', '\n', ...
 					  '-append');
+        end
 	end
 
 
@@ -359,7 +357,7 @@ function UpdatePlots(obj, event, plotinfo)
 		global data_ACC;
 		plotHandlesACC = plotinfo.handles{2};
 		% only update selected Channel responding axes and plot
-		for index 1 : length(Channel)
+		for index = 1 : length(Channel)
 			for seq = 1 : 3
 				data_ch_plot = data_ACC(Channel(index)*3 - 3 + seq : 48 : end);
 				set(plotHandlesACC(Channel(index)*3 - 3 + seq), ...
@@ -381,7 +379,7 @@ function UpdatePlots(obj, event, plotinfo)
 		global data_ACC;
 		plotHandlesACC = plotinfo.handles{2};
 		% only update selected Channel responding axes and plot
-		for index 1 : length(Channel)
+		for index = 1 : length(Channel)
 			for seq = 1 : 3
 				data_ch_plot = data_ACC(Channel(index)*3 - 3 + seq : 48 : end);
 				set(plotHandlesACC(Channel(index)*3 - 3 + seq), ...
