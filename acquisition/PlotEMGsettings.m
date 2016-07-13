@@ -1,4 +1,4 @@
-function [figureHandleEMG, axesHandlesEMG] = PlotEMGsettings()
+function [figureHandleEMG, plotHandlesEMG] = PlotEMGsettings()
 
 	% initiate the EMG figure
 	figureHandleEMG = figure('Name', 'EMG Data', ...

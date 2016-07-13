@@ -21,6 +21,26 @@
 
 function output = Acquire(DEBUG, Sensor, Channel, Write)
 
+	% ----Preparation of Write data into a folder name.---
+	if Write
+		% newly build a folder with the name of current time
+		c = clock;
+		global folder_name;
+		folder_name = [num2str(c(1)), ... % year
+		               '_', ...
+		               num2str(c(2)), ... % month
+		               '_', ...
+		               num2str(c(3)), ... % day
+		               '_', ...
+		               num2str(c(4)), ... % hour
+		               '_', ...
+		               num2str(c(5)), ... % minute
+		               '_', ...
+		               num2str(fix(c(6)))]; % second
+		% for example, run this code at 2016-07-13 10:13:30s
+		% folder_name, 2016_07_13_10_13_30
+		mkdir(folder_name);
+	end
 	% ============connection to the Delsys device==========
 	HOST_IP = '127.0.0.1';
 
@@ -49,8 +69,11 @@ function output = Acquire(DEBUG, Sensor, Channel, Write)
 			% if DEBUG, 
 			% figure of data displaying settings
 			if DEBUG
-				[figureHandleEMG, ~] = PlotEMGsettings();
-				[figureHandleACC, ~] = PlotACCsettings();
+				[figureHandleEMG, plotHandlesEMG] = PlotEMGsettings();
+				[figureHandleACC, plotHandlesACC] = PlotACCsettings();
+				% both
+				plotinfo.typename = 'both';
+				plotinfo.handles = {plotHandlesEMG, plotHandlesACC};
 				% timer to refresh the data displaying
 				t = timer('Period', .1, ...
 						  'ExecutionMode', 'fixedSpacing', ...
@@ -93,7 +116,11 @@ function output = Acquire(DEBUG, Sensor, Channel, Write)
 			% if DEBUG, 
 			% figure of data displaying settings
 			if DEBUG
-				[figureHandleEMG, ~] = PlotEMGsettings();
+				[figureHandleEMG, plotHandlesEMG] = PlotEMGsettings();
+				% EMG
+				plotinfo.Channel = Channel;
+				plotinfo.typename = 'EMG';
+				plotinfo.handles = {plotHandlesEMG};
 				% timer to refresh the data displaying
 				t = timer('Period', .1, ...
 						  'ExecutionMode', 'fixedSpacing', ...
@@ -133,11 +160,15 @@ function output = Acquire(DEBUG, Sensor, Channel, Write)
 			% if DEBUG, 
 			% figure of data displaying settings
 			if DEBUG
-				[figureHandleACC, ~] = PlotACCsettings();
+				[figureHandleACC, plotHandlesACC] = PlotACCsettings();
+				% ACC
+				plotinfo.Channel = Channel;
+				plotinfo.typename = 'ACC';
+				plotinfo.handles = {plotHandlesACC};
 				% timer to refresh the data displaying
 				t = timer('Period', .1, ...
 						  'ExecutionMode', 'fixedSpacing', ...
-						  'TimerFcn', {@UpdatePlots, plotHandlesACC});
+						  'TimerFcn', {@UpdatePlots, plotinfo});
 				start(t);
 			end
 			% try to connect
@@ -205,21 +236,8 @@ function ReadAndPlotEMG(interfaceObjectEMG)
 
 	% Write == 1 for Write acquired data in txt files with channel name.
 	if Write
-		% newly build a folder with the name of current time
-		c = clock;
-		folder_name = [num2str(c(1)), ... % year
-		               '_', ...
-		               num2str(c(2)), ... % month
-		               '_', ...
-		               num2str(c(3)), ... % day
-		               '_', ...
-		               num2str(c(4)), ... % hour
-		               '_', ...
-		               num2str(c(5)), ... % minute
-		               '_', ...
-		               num2str(fix(c(6)))]; % second
-		mkdir(folder_name);
-		% newly build a folder with the name of EMG/ACC
+		% newly build a folder with the name of EMG
+		global folder_name;
 		mkdir([folder_name, '\EMG'])
 		% there is a text file with name of channel3.txt for example.
 		for index = 1:length(Channel)
@@ -288,21 +306,8 @@ function ReadAndPlotACC(interfaceObjectACC)
 
 	% Write == 1 for Write acquired data in txt files with channel name.
 	if Write
-		% newly build a folder with the name of current time
-		c = clock;
-		folder_name = [num2str(c(1)), ... % year
-		               '_', ...
-		               num2str(c(2)), ... % month
-		               '_', ...
-		               num2str(c(3)), ... % day
-		               '_', ...
-		               num2str(c(4)), ... % hour
-		               '_', ...
-		               num2str(c(5)), ... % minute
-		               '_', ...
-		               num2str(fix(c(6)))]; % second
-		mkdir(folder_name);
 		% newly build a folder with the name of ACC
+		global folder_name;
 		mkdir([folder_name, '\ACC'])
 		% ==================================================wrong==========
 		% do not need newly-build a folder every time a cache is available.
@@ -327,42 +332,58 @@ function ReadAndPlotACC(interfaceObjectACC)
 
 
 % still need modification with varying input parameters. 
-function UpdatePlots(obj, Event, tmp)
-	% EMG plot
-	global data_EMG;
-	global plotHandlesEMG;
-	% only update selected Channel responding axes and plot.
-	for index = 1 : length(Channel)
-		data_ch_plot = data_EMG(index:16:end);
-		set(plotHandlesEMG(index), 'Ydata', data_ch_plot);
-	end
+function UpdatePlots(obj, event, plotinfo)
+	% structure -- plotinfo
+				   % plotinfo.typename = 'both'/'EMG'/'ACC'
+				   % plotinfo.handles = {plotHandlesEMG, plotHandlesACC}
+				   % 					{plotHandlesEMG}
+				   % 					{plotHandlesACC}
+	switch plotinfo.typename
+	case 'both'
+		% EMG plot
+		global data_EMG;
+		Channel = plotinfo.Channel;
+		plotHandlesEMG = plotinfo.handles{1};
+		% only update selected Channel responding axes and plot.
+		for index = 1 : length(Channel)
+			data_ch_plot = data_EMG(index:16:end);
+			set(plotHandlesEMG(index), 'Ydata', data_ch_plot);
+		end
 
-	% ACC plot
-	global data_ACC;
-	global plotHandlesACC;
-	% only update selected Channel responding axes and plot
-	for index 1 : length(Channel)
-		for seq = 1 : 3
-			data_ch_plot = data_ACC(Channel(index)*3 - 3 + seq : 48 : end);
-			set(plotHandlesACC(Channel(index)*3 - 3 + seq), 'Ydata', data_ch_plot);
+		% ACC plot
+		global data_ACC;
+		plotHandlesACC = plotinfo.handles{2};
+		% only update selected Channel responding axes and plot
+		for index 1 : length(Channel)
+			for seq = 1 : 3
+				data_ch_plot = data_ACC(Channel(index)*3 - 3 + seq : 48 : end);
+				set(plotHandlesACC(Channel(index)*3 - 3 + seq), ...
+					'Ydata', data_ch_plot);
+			end
+		end
+	case 'EMG'
+		% EMG plot
+		global data_EMG;
+		Channel = plotinfo.Channel;
+		plotHandlesEMG = plotinfo.handles{1};
+		% only update selected Channel responding axes and plot.
+		for index = 1 : length(Channel)
+			data_ch_plot = data_EMG(index:16:end);
+			set(plotHandlesEMG(index), 'Ydata', data_ch_plot);
+		end
+	case 'ACC'
+		% ACC plot
+		global data_ACC;
+		plotHandlesACC = plotinfo.handles{2};
+		% only update selected Channel responding axes and plot
+		for index 1 : length(Channel)
+			for seq = 1 : 3
+				data_ch_plot = data_ACC(Channel(index)*3 - 3 + seq : 48 : end);
+				set(plotHandlesACC(Channel(index)*3 - 3 + seq), ...
+					'Ydata', data_ch_plot);
+			end
 		end
 	end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 function clearHandle(a_handle)
 	if isvalid(a_handle)

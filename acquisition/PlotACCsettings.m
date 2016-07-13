@@ -1,4 +1,4 @@
-function [figureHandleACC, axesHandlesACC] = PlotACCsettings()
+function [figureHandleACC, plotHandlesACC] = PlotACCsettings()
 
 	% initiate the ACC figure
 	figureHandleACC = figure('Name', 'ACC Data', ...
