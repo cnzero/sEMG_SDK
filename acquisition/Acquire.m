@@ -304,16 +304,25 @@ function ReadAndPlotACC(interfaceObjectACC)
 		mkdir(folder_name);
 		% newly build a folder with the name of ACC
 		mkdir([folder_name, '\ACC'])
+		% ==================================================wrong==========
+		% do not need newly-build a folder every time a cache is available.
+
 		% there is a text file with name of channel3.txt for example.
 		for index = 1:length(Channel)
-			data_ch_each = data_ch_selected(index, :);
-			% save to file
-			dlmwrite([folder_name, '\ACC', '\Channel', ...
-				      num2str(Channel(index)), '.txt'], ...
-				      data_ch_each, ...
-				      'precision', '%.10f', ...
-					  'delimiter', '\n', ...
-					  '-append');
+			acc_str = {'x', 'y', 'z'};
+			for xyz=1 : 3
+				data_ch_each = data_ch_selected((index-1)*3 + xyz, :);
+				% save to file
+				dlmwrite([folder_name, '\ACC', '\Channel', ...
+					      num2str(Channel(index)), acc_str{xyz}, '.txt'], ...
+					      data_ch_each, ...
+					      'precision', '%.10f', ...
+						  'delimiter', '\n', ...
+						  '-append');
+			end
+			% Channel3x.txt
+			% Channel3y.txt
+			% Channel3z.txt
 	end
 
 
