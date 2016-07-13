@@ -19,7 +19,7 @@
 
 
 
-function output = Acquire(DEBUG, Sensor, Channel, Write)
+function Acquire(DEBUG, Sensor, Channel, Write)
 
 	% ----Preparation of Write data into a folder name.---
 	if Write
@@ -40,6 +40,15 @@ function output = Acquire(DEBUG, Sensor, Channel, Write)
 		% for example, run this code at 2016-07-13 10:13:30s
 		% folder_name, 2016_07_13_10_13_30
 		mkdir(folder_name);
+		switch Sensor
+		case 1 % both EMG and ACC
+			mkdir([folder_name, '\EMG']);
+			mkdir([folder_name, '\ACC']);
+		case 2 % only EMG
+			mkdir([folder_name, '\EMG']);
+		case 3 % only ACC
+			mkdir([folder_name, '\ACC']);
+		end
 	end
 	% ============connection to the Delsys device==========
 	HOST_IP = '127.0.0.1';
@@ -72,12 +81,13 @@ function output = Acquire(DEBUG, Sensor, Channel, Write)
 				[figureHandleEMG, plotHandlesEMG] = PlotEMGsettings();
 				[figureHandleACC, plotHandlesACC] = PlotACCsettings();
 				% both
+				plotinfo.Channel = Channel;
 				plotinfo.typename = 'both';
 				plotinfo.handles = {plotHandlesEMG, plotHandlesACC};
 				% timer to refresh the data displaying
 				t = timer('Period', .1, ...
 						  'ExecutionMode', 'fixedSpacing', ...
-						  'TimerFcn', {@UpdatePlots, plotHandlesEMG});
+						  'TimerFcn', {@UpdatePlots, plotinfo});
 				start(t);
 			end
 
@@ -124,7 +134,7 @@ function output = Acquire(DEBUG, Sensor, Channel, Write)
 				% timer to refresh the data displaying
 				t = timer('Period', .1, ...
 						  'ExecutionMode', 'fixedSpacing', ...
-						  'TimerFcn', {@UpdatePlots, plotHandlesEMG});
+						  'TimerFcn', {@UpdatePlots, plotinfo});
 				start(t);
 			end
 
@@ -238,7 +248,6 @@ function ReadAndPlotEMG(interfaceObjectEMG)
 	if Write
 		% newly build a folder with the name of EMG
 		global folder_name;
-		mkdir([folder_name, '\EMG'])
 		% there is a text file with name of channel3.txt for example.
 		for index = 1:length(Channel)
 			data_ch_each = data_ch_selected(index, :);
@@ -308,7 +317,6 @@ function ReadAndPlotACC(interfaceObjectACC)
 	if Write
 		% newly build a folder with the name of ACC
 		global folder_name;
-		mkdir([folder_name, '\ACC'])
 		% ==================================================wrong==========
 		% do not need newly-build a folder every time a cache is available.
 
@@ -331,7 +339,6 @@ function ReadAndPlotACC(interfaceObjectACC)
 	end
 
 
-% still need modification with varying input parameters. 
 function UpdatePlots(obj, event, plotinfo)
 	% structure -- plotinfo
 				   % plotinfo.typename = 'both'/'EMG'/'ACC'
