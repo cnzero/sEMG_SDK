@@ -326,8 +326,27 @@ function ReadAndPlotACC(interfaceObjectACC)
 	end
 
 
+% still need modification with varying input parameters. 
+function UpdatePlots(obj, Event, tmp)
+	% EMG plot
+	global data_EMG;
+	global plotHandlesEMG;
+	% only update selected Channel responding axes and plot.
+	for index = 1 : length(Channel)
+		data_ch_plot = data_EMG(index:16:end);
+		set(plotHandlesEMG(index), 'Ydata', data_ch_plot);
+	end
 
-
+	% ACC plot
+	global data_ACC;
+	global plotHandlesACC;
+	% only update selected Channel responding axes and plot
+	for index 1 : length(Channel)
+		for seq = 1 : 3
+			data_ch_plot = data_ACC(Channel(index)*3 - 3 + seq : 48 : end);
+			set(plotHandlesACC(Channel(index)*3 - 3 + seq), 'Ydata', data_ch_plot);
+		end
+	end
 
 
 
