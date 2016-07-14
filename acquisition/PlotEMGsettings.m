@@ -1,11 +1,14 @@
-function [figureHandleEMG, plotHandlesEMG] = PlotEMGsettings()
+function [figureHandleEMG, plotHandlesEMG] = PlotEMGsettings(interfaceObject)
 
 	% initiate the EMG figure
 	figureHandleEMG = figure('Name', 'EMG Data', ...
-	                         'Numbertitle', 'off');
+	                         'Numbertitle', 'off', ...
+	                         'CloseRequestionFcn', ...
+	                         {@LocalCloseFunction, interfaceObject, ...
+	                         					   t});
 	                        %Function_Name,      Function input parameters.
 	% overwrite the default CloseRequestionFcn to close necessary thread.
-	set(figureHandleEMG, 'position', [50 200 750 750]);
+	set(figureHandleEMG, 'position', [50 200 750 720]);
 
 	%setup EMG plots properties.
 	for i = 1:16

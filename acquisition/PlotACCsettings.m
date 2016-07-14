@@ -1,11 +1,13 @@
-function [figureHandleACC, plotHandlesACC] = PlotACCsettings()
+function [figureHandleACC, plotHandlesACC] = PlotACCsettings(interfaceObject)
 
 	% initiate the ACC figure
 	figureHandleACC = figure('Name', 'ACC Data', ...
-	                         'Numbertitle', 'off');
+	                         'Numbertitle', 'off', ...
+	                         {@LocalCloseFunction, interfaceObject, ...
+	                         					   t});
 	                        %Function_Name,      Function input parameters.
 	% overwrite the default CloseRequestionFcn to close necessary thread.
-	set(figureHandleACC, 'position', [850 200 750 750]);
+	set(figureHandleACC, 'position', [850 200 750 720]);
 
 	%setup ACC plots properties.
 	for i = 1:16
