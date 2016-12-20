@@ -2,7 +2,7 @@ function LocalCloseFunction(figureobj, event, interfaceObject, t)
 
 	% clear up the network objects
 	% EMG, ACC, commObject
-	for index = 1 : 3
+	for index = 1 : length(interfaceObject)
 		if isvalid(interfaceObject{index})
 			fclose(interfaceObject{index});
 			delete(interfaceObject{index});

@@ -1,4 +1,4 @@
-
+% test scripts for some functions or grammer.
 %  test for current time obtaining.
 % c = clock;
 % folder_name = [num2str(c(1)), ... % year

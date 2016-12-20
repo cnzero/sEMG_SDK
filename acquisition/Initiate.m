@@ -2,22 +2,30 @@
 % 			get the acquiring data online and some parameters settings
 
 % parameters settings
-% 			DebugPlot:
-% 				 1: True, the origin result of Official SDK.
-% 				 0: No figures
-% 			Sensor:
-% 				 1: EMG and ACC are both acquired.
-% 				 2: only EMG
-% 				 3: only ACC
-% 			Channel:
-% 				 1xn, row vector, 
-% 				 the sequences of selected Channel number.
-% 			Write:
-% 				 Write the acquired data into a file or not.
-% 				 1. Yes
-% 				 0. No
-function commonObject = Initiate(Tinfo, RPinfo)
+% -----Tinfo---
+    %			InputBufferSize = 6400; [default]
+    %			BytesAvailableFcnCountEMG = 1728; [default]
+    %			BytesAvailableFcnCountACC = 384; [default]
 
+% -----RPinfo---
+	% 			DebugPlot:
+	% 				 1: True, the origin result of Official SDK.
+	% 				 0: No figures
+	% 			Sensor:
+	% 				 1: EMG and ACC are both acquired.
+	% 				 2: only EMG
+	% 				 3: only ACC
+	% 			Channel:
+	% 				 1xn, row vector, 
+	% 				 	the sequences of selected Channel number.
+	% 			Write:
+	% 				 	Write the acquired data into a file or not.
+	% 				 1. Yes
+	% 				 0. No
+	%  parameters get value during running.
+	% 			folder_name
+	% 			plotHandles
+function [commonObject, t, RPinfo] = Initiate(Tinfo, RPinfo)
 	% check of input parameter
 	% struct - Tinfo
 	% 				InputBufferSize
@@ -33,21 +41,18 @@ function commonObject = Initiate(Tinfo, RPinfo)
 	% 				plotHandles
 	% 							{1} = plotHandlesEMG
 	% 							{2} = plotHandlesACC
-
-
 	% newly build a folder with the name of current time
 	folder_name = init_Foler(RPinfo.Write);
 	RPinfo.folder_name = folder_name;
 
 	% ============connection to the Delsys device==========
-	[plotHandles, interfaceObject] = init_Connect(Tinfo, RPinfo);
-	RPinfo.plotHandles = plotHandles;
+	[interfaceObject, t, RPinfo] = init_Connect(Tinfo, RPinfo);
 
 	% send commands to start data acquiring streaming...
 	commonObject = interfaceObject{3};
 
 
-function folder_name = init_Foler()
+function folder_name = init_Foler(Write)
 	folder_name = [];
 	if Write == 1
 		c = clock;
@@ -69,13 +74,15 @@ function folder_name = init_Foler()
 		mkdir([folder_name, '\EMG']);
 		mkdir([folder_name, '\ACC']);
 	end
-function [plotHandles, interfaceObject] = init_Connect(Tinfo, RPinfo)
+function [interfaceObject, t, RPinfo] = init_Connect(Tinfo, RPinfo)
 	global data_EMG;
 	global data_ACC;
+
 	data_EMG = [];
 	data_ACC = [];
 
-	HOST_IP = '127.0.0.1'
+	HOST_IP = '127.0.0.1';
+	% EMG, ACC, common
 	interfaceObject = {tcpip(HOST_IP, 50041, ...    % EMG
 						   'InputBufferSize', Tinfo.InputBufferSize, ...
 						   'BytesAvailableFcnMode', 'byte', ...
@@ -89,23 +96,33 @@ function [plotHandles, interfaceObject] = init_Connect(Tinfo, RPinfo)
 					   tcpip(HOST_IP, 50040)};      % common
 	% RPinfo.DebugPlot for data displaying in figures
 	if RPinfo.DebugPlot == 1
-		[figureHandleEMG, plotHandlesEMG] = PlotEMGsettings(interfaceObject);
-		[figureHandleACC, plotHandlesACC] = PlotACCsettings(interfaceObject);
-		% both
-		RPinfo.Channel = Channel;
-		plotHandles = {plotHandlesEMG, plotHandlesACC};
 		% timer to refresh the data displaying
 		t = timer('Period', .1, ...
-				  'ExecutionMode', 'fixedSpacing', ...
-				  'TimerFcn', {@UpdatePlots, RPinfo});
-		start(t);
-	end 
+				  'ExecutionMode', 'fixedSpacing');
+
+		[figureHandleEMG, plotHandlesEMG] = PlotEMGsettings(interfaceObject, t);
+		[figureHandleACC, plotHandlesACC] = PlotACCsettings(interfaceObject, t);
+		% both
+		% RPinfo.Channel = Channel;
+		plotHandles = {plotHandlesEMG, plotHandlesACC};
+		RPinfo.plotHandles = plotHandles;
+
+		% timer to refresh the data displaying
+		% set(t, 'TimerFcn', {@UpdatePlots, RPinfo})
+		t.TimerFcn = {@UpdatePlots, RPinfo};
+
+		% start(t);
+	end
 	try
-		fopen(interfaceObjectEMG);
-		fopen(interfaceObjectACC);
-		fopen(commonObject);
+		fopen(interfaceObject{1});
+		fopen(interfaceObject{2});
+		fopen(interfaceObject{3});
 	catch
-		LocalCloseFunction(~, ~, interfaceObject, t); % to check whether or not.
+		LocalCloseFunction(1, 1, ...
+							{interfaceObject, ...
+							 figureHandleEMG, ...
+							 figureHandleACC}, ...
+							 t); 
 		error('Connection error.');
 	end
 
@@ -122,6 +139,7 @@ function UpdatePlots(obj, event, RPinfo)
 				data_ch_plot = data_EMG(index:16:end);
 				set(plotHandlesEMG(index), 'Ydata', data_ch_plot);
 			end
+			drawnow;
 		end
 		% ACC plot refresh 
 		if (~isempty(data_ACC))
@@ -132,6 +150,7 @@ function UpdatePlots(obj, event, RPinfo)
 						'Ydata', data_ch_plot);
 				end
 			end
+			drawnow;
 		end
 		% You should test how long this procedure cost.
 
@@ -177,69 +196,71 @@ function Write2Files(data_ch_selected, typename, Channel, folder_name)
 		
 function data_ch_selected = UpdateData(obj, RPinfo, typename)
 	if ( obj.BytesAvailable < obj.BytesAvailableFcnCount)
-		return
-	end
-	% get data from tcpip cache
-	data = cast(fread(obj, obj.BytesAvailable), 'uint8');
-	data = typecast(data, 'single'); % single == 4 bytes.
-	% EMG, multi-16
-	% ACC, multi-48
-		
-	if (DebugPlot == 1) % update global data_EMG/ACC for plot
-		switch typename
-		case 'EMG'
-			global data_EMG;
-			% Overlap for smooth displaying
-			data_EMG = Overlap(data_EMG, 19*obj.BytesAvailableFcnCount, data);
+		data_ch_selected = [];
+	else
+		% get data from tcpip cache
+		data = cast(fread(obj, obj.BytesAvailable), 'uint8');
+		data = typecast(data, 'single'); % single == 4 bytes.
+		% EMG, multi-16
+		% ACC, multi-48
+			
+		if (RPinfo.DebugPlot == 1) % update global data_EMG/ACC for plot
+			switch typename
+			case 'EMG'
+				global data_EMG;
+				% Overlap for smooth displaying
+				data_EMG = Overlap(data_EMG, 19*obj.BytesAvailableFcnCount, data);
 
-		case 'ACC'
-			global data_ACC;
-			% Overlap for smooth displaying
-			data_ACC = Overlap(data_ACC, 19*obj.BytesAvailableFcnCount, data);
-		end 
+			case 'ACC'
+				global data_ACC;
+				% Overlap for smooth displaying
+				data_ACC = Overlap(data_ACC, 19*obj.BytesAvailableFcnCount, data);
+			end 
+		end
+		
+		% Channel data extracted from data
+		Channel = RPinfo.Channel;
+		switch typename
+			case 'EMG'
+				data_ch_all = reshape(data, 16, []);
+				data_ch_selected = data_ch_all(RPinfo.Channel, :);
+				% Channel, input parameter, [3, 7, 9, 15] for example
+				% data_ch_selected,
+				% 4xn
+				% data_ch_selected(1, :), for channel 3
+				% data_ch_selected(2, :), for channel 7
+				% data_ch_selected(3, :), for channel 9
+				% data_ch_selected(4, :), for channel 15
+				% Just an understandable example. 
+				Write2Files(data_ch_selected, 'EMG', Channel, RPinfo.folder_name)
+			case 'ACC'
+				data_ch_all = reshape(data, 48, []);
+				Channel_transfer = [];
+				for index = 1:length(Channel)
+					Channel_transfer = [Channel_transfer, ...
+										Channel(index)*3-2, ...
+										Channel(index)*3-1, ...
+										Channel(index)*3];
+				end
+				% Channel, 		   [3,        7]
+				% Channel_transfer [7, 8, 9,  19, 20, 21]
+				data_ch_selected = data_ch_all(Channel_transfer, :);
+				% Channel, input parameter, [3, 7] for example
+				% channel 3
+				% data_ch_selected(1, :), for channel 3_x
+				% data_ch_selected(2, :), for channel 3_y
+				% data_ch_selected(3, :), for channel 3_z
+				% channel 7
+				% data_ch_selected(4, :), for channel 7_x
+				% data_ch_selected(5, :), for channel 7_y
+				% data_ch_selected(6, :), for channel 7_z
+				% Just an understandable example. 
+				if RPinfo.Write
+					Write2Files(data_ch_selected, 'ACC', Channel, RPinfo.folder_name);
+				end
+		end
 	end
 	
-	% Channel data extracted from data
-	Channel = RPinfo.Channel;
-	switch typename
-		case 'EMG'
-			data_ch_all = reshape(data, 16, []);
-			data_ch_selected = data_ch_all(RPinfo.Channel, :);
-			% Channel, input parameter, [3, 7, 9, 15] for example
-			% data_ch_selected,
-			% 4xn
-			% data_ch_selected(1, :), for channel 3
-			% data_ch_selected(2, :), for channel 7
-			% data_ch_selected(3, :), for channel 9
-			% data_ch_selected(4, :), for channel 15
-			% Just an understandable example. 
-			Write2Files(data_ch_selected, 'EMG', Channel, RPinfo.folder_name)
-		case 'ACC'
-			data_ch_all = reshape(data, 48, []);
-			Channel_transfer = [];
-			for index = 1:length(Channel)
-				Channel_transfer = [Channel_transfer, ...
-									Channel(index)*3-2, ...
-									Channel(index)*3-1, ...
-									Channel(index)*3];
-			end
-			% Channel, 		   [3,        7]
-			% Channel_transfer [7, 8, 9,  19, 20, 21]
-			data_ch_selected = data_ch_all(Channel_transfer, :);
-			% Channel, input parameter, [3, 7] for example
-			% channel 3
-			% data_ch_selected(1, :), for channel 3_x
-			% data_ch_selected(2, :), for channel 3_y
-			% data_ch_selected(3, :), for channel 3_z
-			% channel 7
-			% data_ch_selected(4, :), for channel 7_x
-			% data_ch_selected(5, :), for channel 7_y
-			% data_ch_selected(6, :), for channel 7_z
-			% Just an understandable example. 
-			if RPinfo.Write
-				Write2Files(data_ch_selected, 'ACC', Channel, RPinfo.folder_name);
-			end
-	end
 				
 function data_type = Overlap(data_type, width, data)
 	if (size(data_type, 1) < width)
