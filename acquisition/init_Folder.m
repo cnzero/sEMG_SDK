@@ -1,3 +1,12 @@
+% function description:
+% 			get the folder name based on current time
+% 			to create local folders.
+% Input:
+% 		Write:
+% 			1, Yes
+% 			0, No
+% Output:
+% 		folder_name, 
 function folder_name = init_Folder(Write)
 	folder_name = [];
 	if Write == 1

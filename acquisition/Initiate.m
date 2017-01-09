@@ -23,28 +23,12 @@
 	% 				 1. Yes
 	% 				 0. No
 	%  parameters get value during running.
-	% 			folder_name
-	% 			plotHandles
+	% 			[folder_name]
+	% 			[plotHandles]
 function [commonObject, t, RPinfo] = Initiate(Tinfo, RPinfo)
-	% check of input parameter
-	% struct - Tinfo
-	% 				InputBufferSize
-	% 				BytesAvailableFcnCountEMG
-	% 				BytesAvailableFcnCountACC
-
-	% struct - RPinfo
-	% 				folder_name
-	% 				DebugPlot
-	% 				Sensor
-	% 				Channel
-	% 				Write
-	% 				plotHandles
-	% 							{1} = plotHandlesEMG
-	% 							{2} = plotHandlesACC
 	% newly build a folder with the name of current time
-	folder_name = init_Folder(RPinfo.Write);
-	RPinfo.folder_name = folder_name;
-
+	RPinfo.folder_name = init_Folder(RPinfo.Write);
+	 
 	% ============connection to the Delsys device==========
 	[interfaceObject, t, RPinfo] = init_Connect(Tinfo, RPinfo);
 
