@@ -21,8 +21,8 @@ function TestAcquire()
 	RPinfo.Channel = [1, 2];
 	RPinfo.Write = 1;
 
-	[commonObject, t, RPinfo] = Initiate(Tinfo, RPinfo);
+	[interfaceObject, timerRefreshData, RPinfo] = Initiate(Tinfo, RPinfo);
 	% start
 	% drawnow;
-	start(t);
-	fprintf(commonObject, sprintf(['START\r\n\r']));
+	start(timerRefreshData);
+	fprintf(interfaceObject, sprintf(['START\r\n\r']));

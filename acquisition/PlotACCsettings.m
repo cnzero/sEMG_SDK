@@ -1,11 +1,18 @@
-function [figureHandleACC, plotHandlesACC] = PlotACCsettings(interfaceObject, t)
+% function descriptions:
+% 
+% Input:
+% 		interfaceObject, a 1x3 cell of tcpip handles
+% Output:
+% 		figureHandleEMG
+% 		plotHandlesEMG
+function [figureHandleACC, plotHandlesACC] = PlotACCsettings(interfaceObject, timerRefreshData)
 
 	% initiate the ACC figure
 	figureHandleACC = figure('Name', 'ACC Data', ...
 	                         'Numbertitle', 'off', ...
 	                         'CloseRequestFcn', ...
 	                         {@LocalCloseFunction, interfaceObject, ...
-	                         					   t});
+	                         					   timerRefreshData});
 	                        %Function_Name,      Function input parameters.
 	% overwrite the default CloseRequestionFcn to close necessary thread.
 	set(figureHandleACC, 'position', [850 200 750 700]);
