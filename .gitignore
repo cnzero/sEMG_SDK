@@ -4,3 +4,7 @@
 #Python
 *.pyc
 *.un~
+
+# unnecessary data file, because they are too large.
+*.txt
+*.csv
