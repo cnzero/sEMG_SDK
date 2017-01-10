@@ -38,3 +38,45 @@ Common models functions are described here. For example,
 2. PCA
 3. ICA
 4. NMF and so on.
+
+
+#### Explanations on TCPIP parameters
+##### Common
+1. `HOST_IP=127.0.0.1`  `50040` or something like that
+    `properties of tcpip`
+    `LocalHost` = '127.0.0.1'
+    `LocalPort` = `50040`
+2. `InputBufferSize`,
+    `BytesAvailableFcnMode`
+    `BytesAvailableFcnCount`
+    `BytesAvailableFcn`
+##### EMG
+1. `InputBufferSize` = 6400
+    `BytesAvailableFcnMode` = 'byte'
+    `BytesAvailableFcnCount` = 1728
+    `BytesAvailableFcn` , @Function
+    when the cache in LocalHost:LocalPort is acquried enough to 1728bytes, 
+    Function is trigged.
+2. why __1728__
+    1728 = (27 samples)x(4 bytes/sample)x(16 channels)
+
+
+##### ACC
+1. `InputBufferSize` = 6400
+    `BytesAvailableFcnMode` = 'byte'
+    `BytesAvailableFcnCount` = 384
+    `BytesAvailableFcn` , @Function
+    when the cache in LocalHost:LocalPort is acquried enough to 1728bytes, 
+    Function is trigged.
+2. why __384__
+    384 = (2 samples)x(4 bytes/sample)x(48 channels)
+    3-axes: x-y-z
+    16 channels
+3. 27:2, is the simplest proportion
+
+##### Summary of TCPIP on EMG&ACC
+All data from 16 channels, including EMG signal and ACC data, are stored in the tcpip cache.
+
+In your self-defined functions, you should seperate your wanting data that relating to the selected Sensor channels.
+
+Select the right data to update plotting or stored in the .txt or csv files. 
