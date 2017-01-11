@@ -2,13 +2,10 @@ classdef Model <  handle
 	properties
 		interfaceObjects = {}
 		dataEMG = []
-		dataACC = []
 	end
 
 	events
 		dataEMGChanged
-		dataACCChanged
-		picturesChanged
 	end
 
 	methods
@@ -23,9 +20,25 @@ classdef Model <  handle
 								   'BytesAvailableFcnCount', 1728, ...
 								   'BytesAvailableFcn', {@obj.NotifyEMG}) ...
 								   };
-
-
 		end
+		
+		% -- events trigger
+		function NotifyEMG(obj, source, event)
+			% --acquire [dataEMG] from tcpip cache 
+			% ---===EMG
+			bytesReady = obj.interfaceObjects{2}.BytesAvailable;
+			bytesReady = bytesReady - mod(bytesReady, obj.interfaceObjects{2}.BytesAvailableFcnCount);
+			if (bytesReady == 0)
+				return
+			end
+			data = cast(fread(obj.interfaceObjects{2}, bytesReady), 'uint8');
+			obj.dataEMG = typecast(data, 'single');
+
+			% ---=== notify
+			obj.notify('dataEMGChanged');
+		end
+
+		% ---=== Start() & Stop()
 		function Start(obj)
 			try
 				fopen(obj.interfaceObjects{1});
@@ -43,27 +56,6 @@ classdef Model <  handle
 				error('Dis-connection error');
 			end
 			disp('try to stop tcpip Connection');
-		end
-		% -- events trigger
-		function NotifyEMG(obj, source, event)
-			% --acquire [dataEMG] from tcpip cache 
-			% ---===EMG
-			% --interfaceObjects{2}
-			% --InputBufferSize = 6400
-			% --BytesAvailableFcnMode, byte
-			% --BytesAvailableFcnCount, 1728
-			% --BytesAvailableFcn, model.NotifyEMG
-			% --debug what's the number of [BytesAvailable]
-			bytesReady = obj.interfaceObjects{2}.BytesAvailable;
-			bytesReady = bytesReady - mod(bytesReady, obj.interfaceObjects{2}.BytesAvailableFcnCount);
-			if (bytesReady == 0)
-				return
-			end
-			data = cast(fread(obj.interfaceObjects{2}, bytesReady), 'uint8');
-			obj.dataEMG = typecast(data, 'single');
-
-			% ---=== notify
-			obj.notify('dataEMGChanged');
 		end
 	end
 end

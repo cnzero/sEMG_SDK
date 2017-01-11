@@ -14,13 +14,13 @@ classdef View < handle
 		% --guiding pictures to display
 		% hPictureReady
 		hAxesPictureBed
-		nthPicture = 1
-		hPicturesStack = {'Snooze', ...
-						  'Grasp', ...
-						  'Snooze', ...
-						  'Open', ...
-						  'End'};
-		hTimerPictures
+		% nthPicture = 1
+		% hPicturesStack = {'Snooze', ...
+						  % 'Grasp', ...
+						  % 'Snooze', ...
+						  % 'Open', ...
+						  % 'End'};
+		% hTimerPictures
 
 		% --Buttons
 		hButtonStart
@@ -58,9 +58,9 @@ classdef View < handle
 									   'Position', [0.51 0.45 0.48 0.5]);
 			hPictureReady = imread('Ready.jpg');
 			imshow(hPictureReady, 'Parent', obj.hAxesPictureBed);
-			obj.hTimerPictures = timer('Period', 2, ...
-									  'ExecutionMode', 'fixedSpacing', ...
-									  'TasksToExecute', length(obj.hPicturesStack));
+			% obj.hTimerPictures = timer('Period', 2, ...
+									  % 'ExecutionMode', 'fixedSpacing', ...
+									  % 'TasksToExecute', length(obj.hPicturesStack));
 									  % 'TimerFcn', {@TimerFcn_PicturesChanging, obj});
 			% start(obj.hTimerPictures);
 			%  --- part selection
@@ -96,6 +96,13 @@ classdef View < handle
 			% --register controller responde functions as view Callback functions
 			obj.attachToController(obj.controllerObj); 
 		end
+        
+
+        function attachToController(obj, controller)
+        	set(obj.hButtonStart, 'Callback', @controller.Callback_ButtonStart);
+        	set(obj.hButtonAnalyze, 'Callback', @controller.Callback_ButtonAnalyze);
+        end
+
         % -- event [dataEMGChanged] responde function
         function UpdateAxesEMG(obj, source, event)
         	% disp('UpdateAxesEMG...');
@@ -120,21 +127,5 @@ classdef View < handle
         	% --==write [obj.modelObj.dataEMG] into txt file with appending format.
         end
 
-
-        function attachToController(obj, controller)
-        	set(obj.hButtonStart, 'Callback', @controller.Callback_ButtonStart);
-        	set(obj.hButtonAnalyze, 'Callback', @controller.Callback_ButtonAnalyze);
-
-        	% --== TimerFcn
-        	set(obj.hTimerPictures, 'TimerFcn', {@controller.TimerFcn_PicturesChanging})
-        end
-
 	end
 end
-
-% function TimerFcn_PicturesChanging(source, eventdata, object)
-% 	namePicture = object.hPicturesStack{object.nthPicture}; % char
-% 	hPicture = imread([namePicture, '.jpg']);
-% 	imshow(hPicture, 'Parent', object.hAxesPictureBed);
-% 	object.nthPicture = object.nthPicture + 1;
-% end
