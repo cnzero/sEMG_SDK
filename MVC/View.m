@@ -1,6 +1,6 @@
 classdef View < handle
 	properties
-		hChannels = [1 2];
+		hChannels = [1 2]
 		hPartSelection = {'Upper'}
 
 		hFigure
@@ -128,7 +128,14 @@ classdef View < handle
         function Write2FilesEMG(obj, source, event)
         	% disp('Write2FilesEMG...');
         	% --==write [obj.modelObj.dataEMG] into txt file with appending format.
-        	for index=1:length(obj.)
+        	for index=1:length(obj.hChannels)
+        		data_index = obj.modelObj(obj.hChannels(index):16:end);
+        		% --save to .txt file
+        		dlmwrite([obj.folder_name, '\EMG', ...
+        				  '\Channel', num2str(obj.hChannels(index), '.txt')], ...
+        				  data_index, ...
+        				  'precision', '%.10f', 'delimiter', '\n', '-append');	
+        	end
         end
 
 	end

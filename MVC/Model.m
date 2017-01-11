@@ -2,10 +2,14 @@ classdef Model <  handle
 	properties
 		interfaceObjects = {}
 		dataEMG = []
+		scalingRatio = 1
+		flagRefreshEMG = true
+		flagWriteEMG = false
 	end
 
 	events
-		dataEMGChanged
+		eventEMGChanged
+		eventEMGRefreshing
 	end
 
 	methods
@@ -34,8 +38,10 @@ classdef Model <  handle
 			data = cast(fread(obj.interfaceObjects{2}, bytesReady), 'uint8');
 			obj.dataEMG = typecast(data, 'single');
 
-			% ---=== notify
+			% ---=== notify to save 
 			obj.notify('dataEMGChanged');
+
+
 		end
 
 		% ---=== Start() & Stop()
