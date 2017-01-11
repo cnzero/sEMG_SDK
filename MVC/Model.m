@@ -42,6 +42,7 @@ classdef Model <  handle
 			catch
 				error('Dis-connection error');
 			end
+			disp('try to stop tcpip Connection');
 		end
 		% -- events trigger
 		function NotifyEMG(obj, source, event)
@@ -64,25 +65,5 @@ classdef Model <  handle
 			% ---=== notify
 			obj.notify('dataEMGChanged');
 		end
-		% function NotifyACC(obj)
-		% 	% --acquire [dataACC] from tcpip cache 
-		% 	% ---===ACC
-		% 	% --interfaceObjects{3}
-		% 	% --InputBufferSize = 6400
-		% 	% --BytesAvailableFcnMode, byte
-		% 	% --BytesAvailableFcnCount, 384
-		% 	% --BytesAvailableFcn, model.NotifyACC
-		% 	% --debug what's the number of [BytesAvailable]
-		% 	bytesReady = obj.interfaceObjects{3}.BytesAvailable
-		% 	bytesReady = bytesReady - mod(bytesReady, obj.interfaceObjects{3}.BytesAvailableFcnCount);
-		% 	if (bytesReady == 0)
-		% 		return
-		% 	end
-		% 	data = cast(fread(obj.interfaceObjects{3}, bytesReady), 'uint8');
-		% 	dataACC = typecast(data, 'single');
-
-		% 	% ---=== notify
-		% 	obj.notify('dataACCChanged');
-		% end
 	end
 end

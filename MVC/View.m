@@ -20,7 +20,7 @@ classdef View < handle
 						  'Snooze', ...
 						  'Open', ...
 						  'End'};
-		TimerPictures
+		hTimerPictures
 
 		% --Buttons
 		hButtonStart
@@ -58,11 +58,11 @@ classdef View < handle
 									   'Position', [0.51 0.45 0.48 0.5]);
 			hPictureReady = imread('Ready.jpg');
 			imshow(hPictureReady, 'Parent', obj.hAxesPictureBed);
-			obj.TimerPictures = timer('Period', 2, ...
+			obj.hTimerPictures = timer('Period', 2, ...
 									  'ExecutionMode', 'fixedSpacing', ...
-									  'TasksToExecute', length(obj.hPicturesStack), ...
-									  'TimerFcn', {@TimerFcn_PicturesChanging, obj});
-			start(obj.TimerPictures);
+									  'TasksToExecute', length(obj.hPicturesStack));
+									  % 'TimerFcn', {@TimerFcn_PicturesChanging, obj});
+			% start(obj.hTimerPictures);
 			%  --- part selection
 			% namePartSelection = {'Body', 'Upper'};
 			% hPopupPartSelection = uicontrol('Parent', obj.hFigure, ...
@@ -83,15 +83,17 @@ classdef View < handle
 										   'FontSize', 16, ...
 										   'String', 'Analyze');
 			% ===================basic & static figure displays=================
-			% --===Model===--subscribe to the event
+
+			%  --== including handles
 			obj.modelObj = modelObj;
+			% --===Controller===--controller to responde
+			obj.controllerObj = Controller(obj, obj.modelObj);
+
+			% --===Model===--subscribe to the event
 			obj.modelObj.addlistener('dataEMGChanged', @obj.UpdateAxesEMG);
 			obj.modelObj.addlistener('dataEMGChanged', @obj.Write2FilesEMG);
 
-			% --===Controller===--controller to responde
-			obj.controllerObj = obj.makeController(); % to new a Controller object
-
-			% --register controller responde functions as view callback functions
+			% --register controller responde functions as view Callback functions
 			obj.attachToController(obj.controllerObj); 
 		end
         % -- event [dataEMGChanged] responde function
@@ -118,24 +120,21 @@ classdef View < handle
         	% --==write [obj.modelObj.dataEMG] into txt file with appending format.
         end
 
-        function controllerObj = makeController(obj)
-        	controllerObj = [];
-        end
 
         function attachToController(obj, controller)
+        	set(obj.hButtonStart, 'Callback', @controller.Callback_ButtonStart);
+        	set(obj.hButtonAnalyze, 'Callback', @controller.Callback_ButtonAnalyze);
+
+        	% --== TimerFcn
+        	set(obj.hTimerPictures, 'TimerFcn', {@controller.TimerFcn_PicturesChanging})
         end
 
 	end
 end
 
-% ---===local functions===---
-function data = ReadTCPIPdata(interfaceObjects)
-
-end
-
-function TimerFcn_PicturesChanging(source, eventdata, object)
-	namePicture = object.hPicturesStack{object.nthPicture}; % char
-	hPicture = imread([namePicture, '.jpg']);
-	imshow(hPicture, 'Parent', object.hAxesPictureBed);
-	object.nthPicture = object.nthPicture + 1;
-end
+% function TimerFcn_PicturesChanging(source, eventdata, object)
+% 	namePicture = object.hPicturesStack{object.nthPicture}; % char
+% 	hPicture = imread([namePicture, '.jpg']);
+% 	imshow(hPicture, 'Parent', object.hAxesPictureBed);
+% 	object.nthPicture = object.nthPicture + 1;
+% end
