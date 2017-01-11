@@ -2,19 +2,15 @@ classdef View < handle
 	
 	properties
 		% -- basic parameters on device
-		hChannels = [1 2 3 5];
+		hChannels = [1 2];
 		hPartSelection = {'Upper'}
 
 		hFigure
 		% --EMG
+		hAxesEMG = []
+		hPlotsEMG = []
 		hPanelEMG
-		hAxesEMG
-		hPlotsEMG
 
-		% --ACC
-		% hPanelACC
-		% hAxesACC
-		% hPlotsACC
 		% --guiding pictures to display
 		% hPictureReady
 		hAxesPictureBed
@@ -25,8 +21,9 @@ classdef View < handle
 
 		modelObj
 		controllerObj
-	end
 
+		dataAxesEMG = []
+	end
 	methods
 		% --Construct
 		function obj = View(modelObj)
@@ -37,10 +34,13 @@ classdef View < handle
 								  'Units', 'normalized', ...
 								  'Position', [0 0 0.5 0.96]);
 			% --hAxesEMG, hPlotsEMG
-			for ch=1:4
+			% nChannels = length(obj.hChannels);
+			nChannels = 2;
+			dWidth= 0.95/nChannels;
+			for ch=1:nChannels
 				obj.hAxesEMG(ch) = axes('Parent', obj.hPanelEMG, ...
 										'Units', 'normalized', ...
-										'Position', [0.04 1-0.23*ch, 0.9 0.18]); 
+										'Position', [0.04 1- dWidth *ch, 0.98 dWidth*0.9]); 
 				obj.hPlotsEMG(ch) = plot(obj.hPanelEMG, 0, '-y', 'LineWidth', 1);
 				title(['Channel', num2str(ch)]);
 			end
@@ -83,15 +83,29 @@ classdef View < handle
 			% --register controller responde functions as view callback functions
 			obj.attachToController(obj.controllerObj); 
 		end
-        
         % -- event [dataEMGChanged] responde function
         function UpdateAxesEMG(obj, source, event)
         	disp('UpdateAxesEMG');
-
+        	if(length(obj.dataAxesEMG) < 32832)
+        		obj.dataAxesEMG = [obj.dataAxesEMG; ...
+        						   obj.modelObj.dataEMG];
+        	else
+        		obj.dataAxesEMG = [obj.dataAxesEMG(length(obj.modelObj.dataEMG)+1:end); ...
+        						   obj.modelObj.dataEMG];
+        	end
+        	% --==seperate [obj.dataAxesEMG] into 16-Channel-Axes
+        	for ch=1:length(obj.hPlotsEMG)
+        		data_ch = obj.dataAxesEMG(ch:16:end);
+        		% set(obj.hPlotsEMG(ch), 'Ydata', data_ch);
+        		length(data_ch)
+        		plot(obj.hAxesEMG(ch), data_ch);
+        		drawnow;
+        	end
         end
         % -- event [dataEMGChanged] responde function
         function Write2FilesEMG(obj, source, event)
         	disp('Write2FilesEMG...');
+        	% --==write [obj.modelObj.dataEMG] into txt file with appending format.
         end
 
         function controllerObj = makeController(obj)
@@ -105,5 +119,6 @@ classdef View < handle
 end
 
 % ---===local functions===---
-function data = ReadTCPIPdata(interface)
-	bytesReady = interface.BytesAvailable;
+function data = ReadTCPIPdata(interfaceObjects)
+
+end
