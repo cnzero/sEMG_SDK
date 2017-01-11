@@ -14,6 +14,13 @@ classdef View < handle
 		% --guiding pictures to display
 		% hPictureReady
 		hAxesPictureBed
+		nthPicture = 1
+		hPicturesStack = {'Snooze', ...
+						  'Grasp', ...
+						  'Snooze', ...
+						  'Open', ...
+						  'End'};
+		TimerPictures
 
 		% --Buttons
 		hButtonStart
@@ -51,7 +58,11 @@ classdef View < handle
 									   'Position', [0.51 0.45 0.48 0.5]);
 			hPictureReady = imread('Ready.jpg');
 			imshow(hPictureReady, 'Parent', obj.hAxesPictureBed);
-
+			obj.TimerPictures = timer('Period', 2, ...
+									  'ExecutionMode', 'fixedSpacing', ...
+									  'TasksToExecute', length(obj.hPicturesStack), ...
+									  'TimerFcn', {@TimerFcn_PicturesChanging, obj});
+			start(obj.TimerPictures);
 			%  --- part selection
 			% namePartSelection = {'Body', 'Upper'};
 			% hPopupPartSelection = uicontrol('Parent', obj.hFigure, ...
@@ -85,7 +96,7 @@ classdef View < handle
 		end
         % -- event [dataEMGChanged] responde function
         function UpdateAxesEMG(obj, source, event)
-        	disp('UpdateAxesEMG');
+        	% disp('UpdateAxesEMG...');
         	if(length(obj.dataAxesEMG) < 32832)
         		obj.dataAxesEMG = [obj.dataAxesEMG; ...
         						   obj.modelObj.dataEMG];
@@ -97,14 +108,13 @@ classdef View < handle
         	for ch=1:length(obj.hPlotsEMG)
         		data_ch = obj.dataAxesEMG(ch:16:end);
         		% set(obj.hPlotsEMG(ch), 'Ydata', data_ch);
-        		length(data_ch)
         		plot(obj.hAxesEMG(ch), data_ch);
         		drawnow;
         	end
         end
         % -- event [dataEMGChanged] responde function
         function Write2FilesEMG(obj, source, event)
-        	disp('Write2FilesEMG...');
+        	% disp('Write2FilesEMG...');
         	% --==write [obj.modelObj.dataEMG] into txt file with appending format.
         end
 
@@ -121,4 +131,11 @@ end
 % ---===local functions===---
 function data = ReadTCPIPdata(interfaceObjects)
 
+end
+
+function TimerFcn_PicturesChanging(source, eventdata, object)
+	namePicture = object.hPicturesStack{object.nthPicture}; % char
+	hPicture = imread([namePicture, '.jpg']);
+	imshow(hPicture, 'Parent', object.hAxesPictureBed);
+	object.nthPicture = object.nthPicture + 1;
 end
