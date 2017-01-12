@@ -21,6 +21,11 @@ classdef View < handle
 		controllerObj
 
 		dataAxesEMG = []
+
+		% flag 
+		flagAxesRefreshing = 0
+		flagEMGWrite2Files = 0
+		ratioAxesRefreshing = 0
 	end
 	methods
 		% --Construct
@@ -70,11 +75,14 @@ classdef View < handle
 			obj.controllerObj = Controller(obj, obj.modelObj);
 
 			% --===Model===--subscribe to the event
-			obj.modelObj.addlistener('dataEMGChanged', @obj.UpdateAxesEMG);
-			obj.modelObj.addlistener('dataEMGChanged', @obj.Write2FilesEMG);
+			obj.modelObj.addlistener('eventEMGChanged', @obj.UpdateAxesEMG);
+			obj.modelObj.addlistener('eventEMGChanged', @obj.Write2FilesEMG);
 
 			% --register controller responde functions as view Callback functions
 			obj.attachToController(obj.controllerObj); 
+
+			% Start to open the hardware --Model Aquisition
+			obj.modelObj.Start();
 		end
         
 
@@ -88,26 +96,21 @@ classdef View < handle
         	folder_name	= [];
 			folder_name = [folder_name, ...
 						   num2str(c(1)), ... % year
-			               '_', ...
 			               num2str(c(2)), ... % month
-			               '_', ...
 			               num2str(c(3)), ... % day
-			               '_', ...
 			               num2str(c(4)), ... % hour
-			               '_', ...
 			               num2str(c(5)), ... % minute
-			               '_', ...
 			               num2str(fix(c(6)))]; % second
 			% for example, run this code at 2016-07-13 10:13:30s
 			% folder_name, 2016_07_13_10_13_30
-			mkdir(['..\Users\',folder_name]);
-			mkdir(['..\Users\',folder_name, '\EMG']);
-			mkdir(['..\Users\',folder_name, '\ACC']);
-			obj.folder_name = ['..\Users\',folder_name];
+			mkdir(['Users\',folder_name]);
+			mkdir(['Users\',folder_name, '\EMG']);
+			mkdir(['Users\',folder_name, '\ACC']);
+			obj.folder_name = ['Users\',folder_name];
         end
         % -- event [dataEMGChanged] responde function
         function UpdateAxesEMG(obj, source, event)
-        	disp('UpdateAxesEMG...');
+        	% disp('UpdateAxesEMG...');
         	% if(length(obj.dataAxesEMG) < 32832)
         	% 	obj.dataAxesEMG = [obj.dataAxesEMG; ...
         	% 					   obj.modelObj.dataEMG];
@@ -128,15 +131,17 @@ classdef View < handle
         function Write2FilesEMG(obj, source, event)
         	% disp('Write2FilesEMG...');
         	% --==write [obj.modelObj.dataEMG] into txt file with appending format.
-        	for index=1:length(obj.hChannels)
-        		data_index = obj.modelObj(obj.hChannels(index):16:end);
-        		% --save to .txt file
-        		dlmwrite([obj.folder_name, '\EMG', ...
-        				  '\Channel', num2str(obj.hChannels(index), '.txt')], ...
-        				  data_index, ...
-        				  'precision', '%.10f', 'delimiter', '\n', '-append');	
-        	end
-        end
+        	if obj.flagEMGWrite2Files == 1
+	        	for index=1:length(obj.hChannels)
+	        		data_index = obj.modelObj.dataEMG(obj.hChannels(index):16:end)
+	        		% --save to .txt file
+	        		dlmwrite([obj.folder_name, '\EMG', ...
+	        				  '\Channel', num2str(obj.hChannels(index)), '.txt'], ...
+	        				  data_index, ...
+	        				  'precision', '%.6f', 'delimiter', '\n', '-append');	
+	        	end
+	        end
+        end % ---=== Write2FilesEMG()
 
 	end
 end
