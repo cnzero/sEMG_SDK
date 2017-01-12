@@ -15,6 +15,8 @@ classdef Controller < handle
 						  'Snooze', ...
 						  'Middle', ...
 						  'End'}
+		RawData = []
+		% dimensions: (2000*t) X nCh
 	end
 
 	methods
@@ -51,19 +53,21 @@ classdef Controller < handle
 			for ch=1:length(obj.viewObj.hChannels)
 				data_ch = load([obj.viewObj.folder_name, '\EMG', ...
 								'\Channel', num2str(obj.viewObj.hChannels(ch)), '.txt']);
+				obj.RawData= [obj.RawData, data_ch];
 				plot(obj.viewObj.hAxesEMG(ch), data_ch);
 				XTick = 0:1000:length(data_ch);
 				set(obj.viewObj.hAxesEMG(ch), 'XTick', XTick)
 			end
-			
+			size(obj.RawData) % (2000t) X nCh
 		end
 
 		function Callback_EditSplitLines(obj, source, eventdata)
 			hEditInputs = get(obj.viewObj.hEditSplitLines, 'String');
 			hEditInputsCell = strsplit(hEditInputs);
-			xSplitLines = [];
+			obj.viewObj.xSplitLines = [];
 			for i=1:length(hEditInputsCell)
-				xSplitLines = [xSplitLines, str2num(hEditInputsCell{i})];
+				obj.viewObj.xSplitLines = [obj.viewObj.xSplitLines; ...
+										   str2num(hEditInputsCell{i})];
 			end
 
 			% --==draw split vertical lines in the axes.
@@ -82,8 +86,19 @@ classdef Controller < handle
 		end
 
 		function Callback_ButtonSplitLines(obj, source, eventdata)
-			
 			% Split Raw sEMG signal and store in Movements-corresponding files.
+			xColumn1 = [0; obj.viewObj.xSplitLines(2:end)];
+			xColumn2 = obj.viewObj.xSplitLines;
+			% --inward contraction
+			xColumn1 = xColumn1 + 1000; % - every 2000samples a second
+			xColumn2 = xColumn2 - 1000; % - every 2000samples a second
+			xSplitLinesPaires = [xColumn1, xColumn2];
+
+			for mv=1:length(obj.hPicturesStack)
+				nameMovement = obj.hPicturesStack{mv}; % --string name
+				data_mv = obj.RawData( xSplitLinesPaires(mv, :), :); % ------========
+			end
+
 		end
 		function TimerFcn_PicturesChanging(obj, source, eventdata)
 			% the End pictures?
