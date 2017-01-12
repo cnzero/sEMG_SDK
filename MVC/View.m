@@ -23,9 +23,15 @@ classdef View < handle
 		dataAxesEMG = []
 
 		% flag 
-		flagAxesRefreshing = 0
+		flagAxesRefreshing = 1
 		flagEMGWrite2Files = 0
-		ratioAxesRefreshing = 0
+		% ratioAxesRefreshing = 0
+
+		% Split lines
+		hTextSplitLines
+		hEditSplitLines
+		hButtonSplitLines
+		hSplitLines = []
 	end
 	methods
 		% --Construct
@@ -67,6 +73,24 @@ classdef View < handle
 										   'Position', [0.8 0.25 0.1 0.05], ...
 										   'FontSize', 16, ...
 										   'String', 'Analyze');
+			% Split lines
+			obj.hTextSplitLines = uicontrol('Parent', obj.hFigure, ....
+											'Style', 'Text', ....
+											'Units', 'normalized', ...
+											'Position', [0.52, 0.4 0.13 0.04], ...
+											'FontSize', 14, ...
+											'String', 'Input Split Lines Positions');
+			obj.hEditSplitLines = uicontrol('Parent', obj.hFigure, ...
+											'Style', 'Edit', ...
+											'Units', 'normalized', ...
+											'Position', [0.52 0.38 0.23 0.03], ...
+											'FontSize', 16);
+			obj.hButtonSplitLines = uicontrol('Parent', obj.hFigure, ...
+											  'Style', 'pushbutton', ...
+											  'Units', 'normalized', ...
+											  'Position', [0.52 0.33 0.05 0.04], ...
+											  'String', 'Enter', ...
+											  'FontSize', 16);
 			% ===================basic & static figure displays=================
 
 			%  --== including handles
@@ -81,7 +105,8 @@ classdef View < handle
 			% --register controller responde functions as view Callback functions
 			obj.attachToController(obj.controllerObj); 
 
-			% Start to open the hardware --Model Aquisition
+			% --Start to open the hardware --Model Aquisition
+			% debug to cancle start hardware acquisition
 			obj.modelObj.Start();
 		end
         
@@ -89,6 +114,8 @@ classdef View < handle
         function attachToController(obj, controller)
         	set(obj.hButtonStart, 'Callback', @controller.Callback_ButtonStart);
         	set(obj.hButtonAnalyze, 'Callback', @controller.Callback_ButtonAnalyze);
+        	set(obj.hEditSplitLines, 'Callback', @controller.Callback_EditSplitLines);
+        	set(obj.hButtonSplitLines, 'Callback', @controller.Callback_ButtonSplitLines);
         end
 
         function Init_Folder(obj)
@@ -110,22 +137,24 @@ classdef View < handle
         end
         % -- event [dataEMGChanged] responde function
         function UpdateAxesEMG(obj, source, event)
-        	% disp('UpdateAxesEMG...');
-        	% if(length(obj.dataAxesEMG) < 32832)
-        	% 	obj.dataAxesEMG = [obj.dataAxesEMG; ...
-        	% 					   obj.modelObj.dataEMG];
-        	% else
-        	% 	obj.dataAxesEMG = [obj.dataAxesEMG(length(obj.modelObj.dataEMG)+1:end); ...
-        	% 					   obj.modelObj.dataEMG];
-        	% end
-        	% % --==seperate [obj.dataAxesEMG] into 16-Channel-Axes
-        	% for ch=1:length(obj.hPlotsEMG)
-        	% 	data_ch = obj.dataAxesEMG(ch:16:end);
-        	% 	% set(obj.hPlotsEMG(ch), 'Ydata', data_ch);
-        	% 	plot(obj.hAxesEMG(ch), data_ch);
-        	% 	drawnow;
-        	% end
-        	% ---=== It costs much time to refresh axes in this way.
+        	if obj.flagAxesRefreshing == 1
+        		% disp('UpdateAxesEMG...');
+	        	if(length(obj.dataAxesEMG) < 32832)
+	        		obj.dataAxesEMG = [obj.dataAxesEMG; ...
+	        						   obj.modelObj.dataEMG];
+	        	else
+	        		obj.dataAxesEMG = [obj.dataAxesEMG(length(obj.modelObj.dataEMG)+1:end); ...
+	        						   obj.modelObj.dataEMG];
+	        	end
+	        	% --==seperate [obj.dataAxesEMG] into 16-Channel-Axes
+	        	for ch=1:length(obj.hPlotsEMG)
+	        		data_ch = obj.dataAxesEMG(ch:16:end);
+	        		% set(obj.hPlotsEMG(ch), 'Ydata', data_ch);
+	        		plot(obj.hAxesEMG(ch), data_ch);
+	        		drawnow;
+	        	end
+	        	% ---=== It costs much time to refresh axes in this way.
+	        end
         end
         % -- event [dataEMGChanged] responde function
         function Write2FilesEMG(obj, source, event)
@@ -133,12 +162,12 @@ classdef View < handle
         	% --==write [obj.modelObj.dataEMG] into txt file with appending format.
         	if obj.flagEMGWrite2Files == 1
 	        	for index=1:length(obj.hChannels)
-	        		data_index = obj.modelObj.dataEMG(obj.hChannels(index):16:end)
+	        		data_index = obj.modelObj.dataEMG(obj.hChannels(index):16:end);
 	        		% --save to .txt file
 	        		dlmwrite([obj.folder_name, '\EMG', ...
 	        				  '\Channel', num2str(obj.hChannels(index)), '.txt'], ...
 	        				  data_index, ...
-	        				  'precision', '%.6f', 'delimiter', '\n', '-append');	
+	        				  'precision', '%.8f', 'delimiter', '\n', '-append');	
 	        	end
 	        end
         end % ---=== Write2FilesEMG()
