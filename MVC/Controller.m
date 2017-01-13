@@ -9,7 +9,9 @@ classdef Controller < handle
 		hPicturesStack = {'Snooze', ...
 						  'Grasp', ...
 						  'Snooze', ...
-						  'Open'}
+						  'Open', ...
+						  'Snooze', ...
+						  'Index'}
 		RawData = []
 		% dimensions: (2000*t) X nCh
 	end
@@ -42,16 +44,20 @@ classdef Controller < handle
 			set(obj.viewObj.hPanelEMG, 'Position', [0 0 1 1]);
 			set(obj.viewObj.hButtonStart, 'Visible', 'off');
 			set(obj.viewObj.hButtonAnalyze, 'Visible', 'off');
+			% split lines
+			set(obj.viewObj.hTextSplitLines, 'Visible', 'on');
+			set(obj.viewObj.hEditSplitLines, 'Visible', 'on');
+			set(obj.viewObj.hButtonSplitLines, 'Visible', 'on');
 			% load acquired data & shown in View Axes
 			for ch=1:length(obj.viewObj.hChannels)
-				data_ch = load([obj.viewObj.folder_name, '\EMG', ...
+				data_file = load([obj.viewObj.folder_name, '\EMG', ...
 								'\Channel', num2str(obj.viewObj.hChannels(ch)), '.txt']);
-				obj.RawData= [obj.RawData, data_ch];
-				plot(obj.viewObj.hAxesEMG(ch), data_ch);
-				XTick = 0:1000:length(data_ch);
+				obj.RawData= [obj.RawData, data_file];
+				plot(obj.viewObj.hAxesEMG(ch), data_file);
+				XTick = 0:1000:length(data_file);
 				set(obj.viewObj.hAxesEMG(ch), 'XTick', XTick)
 			end
-			size(obj.RawData) % (2000t) X nCh
+
 		end
 
 		function Callback_EditSplitLines(obj, source, eventdata)
@@ -60,7 +66,7 @@ classdef Controller < handle
 			obj.viewObj.xSplitLines = [];
 			for i=1:length(hEditInputsCell)
 				obj.viewObj.xSplitLines = [obj.viewObj.xSplitLines; ...
-										   str2num(hEditInputsCell{i})];
+										   str2num(hEditInputsCell{i})*1000];
 			end
 
 			% --==draw split vertical lines in the axes.
@@ -88,16 +94,18 @@ classdef Controller < handle
 			xSplitLinesPaires = [xColumn1, xColumn2];
 
 			disp('Writing to Movement files.');
+			totalStack = {};
+			for mp=1:(size(xSplitLinesPaires,1)/length(obj.hPicturesStack))
+				totalStack = cat(2, totalStack, obj.hPicturesStack);
+			end
 			for xn=1:size(xSplitLinesPaires, 1)
-				mv = mod(xn, length(obj.hPicturesStack)/2)+1;
-				nameMovement = obj.hPicturesStack{mv};
+				nameMovement = totalStack{xn}
 
-				a = xSplitLinesPaires(mv, 1);
-				b = xSplitLinesPaires(mv, 2);
+				a = xSplitLinesPaires(xn, 1);
+				b = xSplitLinesPaires(xn, 2);
 				data_mv = obj.RawData(a:b, :);
 				dlmwrite([obj.viewObj.folder_name, '\EMG\', nameMovement, '.txt'], data_mv, '-append');
 			end
-
 		end
 		function TimerFcn_PicturesChanging(obj, source, eventdata)
 			% the End pictures?
@@ -109,7 +117,7 @@ classdef Controller < handle
 				imshow(hPicture, 'Parent', obj.viewObj.hAxesPictureBed);
 				drawnow;
 			else
-				namePicture = obj.hPicturesStack{obj.nthPicture}
+				namePicture = obj.hPicturesStack{obj.nthPicture};
 				hPicture = imread([namePicture, '.jpg']);
 				imshow(hPicture, 'Parent', obj.viewObj.hAxesPictureBed);
 				drawnow;
