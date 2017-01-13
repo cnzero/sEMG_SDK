@@ -9,12 +9,7 @@ classdef Controller < handle
 		hPicturesStack = {'Snooze', ...
 						  'Grasp', ...
 						  'Snooze', ...
-						  'Open', ...
-						  'Snooze', ...
-						  'Index', ...
-						  'Snooze', ...
-						  'Middle', ...
-						  'End'}
+						  'Open'}
 		RawData = []
 		% dimensions: (2000*t) X nCh
 	end
@@ -23,9 +18,9 @@ classdef Controller < handle
 		function obj = Controller(viewObj0, modelObj0)
 			obj.viewObj = viewObj0;
 			obj.modelObj = modelObj0;
-			obj.hTimerPictures = timer('Period', 4, ...
+			obj.hTimerPictures = timer('Period', 3, ...
 									   'ExecutionMode', 'fixedSpacing', ...
-									   'TasksToExecute', length(obj.hPicturesStack), ...
+									   'TasksToExecute', length(obj.hPicturesStack)+1, ...
 									   'TimerFcn', {@obj.TimerFcn_PicturesChanging});	
 		end
 
@@ -39,7 +34,7 @@ classdef Controller < handle
 
 		function Callback_ButtonAnalyze(obj, source, eventdata)
 			disp('Analyze Button was pressed...');
-			obj.modelObj.Stop(); disp('Stop Data Acquisition...');
+			obj.modelObj.Stop(); disp('Hardware Connection Stop.');
 			obj.viewObj.flagEMGWrite2Files = 0; disp('Stop Writing data to files...');
 			delete(obj.hTimerPictures);
 
@@ -47,9 +42,7 @@ classdef Controller < handle
 			set(obj.viewObj.hPanelEMG, 'Position', [0 0 1 1]);
 			set(obj.viewObj.hButtonStart, 'Visible', 'off');
 			set(obj.viewObj.hButtonAnalyze, 'Visible', 'off');
-			% load acquired data
-			% shown in View Axes
-			% Comparison and Computation, data Check
+			% load acquired data & shown in View Axes
 			for ch=1:length(obj.viewObj.hChannels)
 				data_ch = load([obj.viewObj.folder_name, '\EMG', ...
 								'\Channel', num2str(obj.viewObj.hChannels(ch)), '.txt']);
@@ -76,9 +69,9 @@ classdef Controller < handle
 			obj.viewObj.hSplitLines = [];
 			for ch=1:length(obj.viewObj.hChannels)
 				YLim = get(obj.viewObj.hAxesEMG(ch), 'YLim');
-				for xn=1:length(xSplitLines)
+				for xn=1:length(obj.viewObj.xSplitLines)
 					obj.viewObj.hSplitLines= [obj.viewObj.hSplitLines, ...
-											 line([xSplitLines(xn), xSplitLines(xn)], ...
+											 line([obj.viewObj.xSplitLines(xn), obj.viewObj.xSplitLines(xn)], ...
 												  [YLim(1), YLim(2)], ...
 						 						  'Parent', obj.viewObj.hAxesEMG(ch)) ];
 				end
@@ -87,32 +80,44 @@ classdef Controller < handle
 
 		function Callback_ButtonSplitLines(obj, source, eventdata)
 			% Split Raw sEMG signal and store in Movements-corresponding files.
-			xColumn1 = [0; obj.viewObj.xSplitLines(2:end)];
-			xColumn2 = obj.viewObj.xSplitLines;
+			xColumn2 = [obj.viewObj.xSplitLines; size(obj.RawData, 1)];
+			xColumn1 = [0; xColumn2(1:end-1)];
 			% --inward contraction
 			xColumn1 = xColumn1 + 1000; % - every 2000samples a second
 			xColumn2 = xColumn2 - 1000; % - every 2000samples a second
 			xSplitLinesPaires = [xColumn1, xColumn2];
 
-			for mv=1:length(obj.hPicturesStack)
-				nameMovement = obj.hPicturesStack{mv}; % --string name
-				data_mv = obj.RawData( xSplitLinesPaires(mv, :), :); % ------========
+			disp('Writing to Movement files.');
+			for xn=1:size(xSplitLinesPaires, 1)
+				mv = mod(xn, length(obj.hPicturesStack)/2)+1;
+				nameMovement = obj.hPicturesStack{mv};
+
+				a = xSplitLinesPaires(mv, 1);
+				b = xSplitLinesPaires(mv, 2);
+				data_mv = obj.RawData(a:b, :);
+				dlmwrite([obj.viewObj.folder_name, '\EMG\', nameMovement, '.txt'], data_mv, '-append');
 			end
 
 		end
 		function TimerFcn_PicturesChanging(obj, source, eventdata)
 			% the End pictures?
-			namePicture = obj.hPicturesStack{obj.nthPicture};
-			hPicture = imread([namePicture, '.jpg']);
-			imshow(hPicture, 'Parent', obj.viewObj.hAxesPictureBed);
-			drawnow;
-			toc
-			obj.nthPicture = obj.nthPicture + 1;
-			if( obj.nthPicture == (length(obj.hPicturesStack)+1))
+			if( obj.nthPicture == (length(obj.hPicturesStack)+1) )
 				obj.nthPicture = 1;
 				obj.viewObj.flagEMGWrite2Files = 0;
-				% obj.modelObj.Stop();
+				
+				hPicture = imread(['End', '.jpg']);
+				imshow(hPicture, 'Parent', obj.viewObj.hAxesPictureBed);
+				drawnow;
+			else
+				namePicture = obj.hPicturesStack{obj.nthPicture}
+				hPicture = imread([namePicture, '.jpg']);
+				imshow(hPicture, 'Parent', obj.viewObj.hAxesPictureBed);
+				drawnow;
+				toc
+				obj.nthPicture = obj.nthPicture + 1;
 			end
+			
+
 		end
 	end
 end
