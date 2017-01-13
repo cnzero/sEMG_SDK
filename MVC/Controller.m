@@ -107,6 +107,24 @@ classdef Controller < handle
 				dlmwrite([obj.viewObj.folder_name, '\EMG\', nameMovement, '.txt'], data_mv, '-append');
 			end
 		end
+
+		function Callback_ButtonOnlineControl(obj, source, eventdata)
+			% features extraction
+
+			% modelling
+
+			% training data accuracy computation
+
+			% [listdlg] or [questdlg] to 
+				% 1. show trainingset accuracy
+				% 2. show testingset accuracy
+				% 3. go on to online-control or not
+				% 4. select a control objects
+					% 1. pictures showing
+					% 2. iLimb
+					% 3. KangfuHand
+					% 4. VirtualHand
+		end
 		function TimerFcn_PicturesChanging(obj, source, eventdata)
 			% the End pictures?
 			if( obj.nthPicture == (length(obj.hPicturesStack)+1) )
