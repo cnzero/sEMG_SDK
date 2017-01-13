@@ -33,6 +33,8 @@ classdef View < handle
 		hButtonSplitLines
 		hSplitLines = []
 		xSplitLines
+
+		hButtonOnlineControl
 	end
 	methods
 		% --Construct
@@ -95,6 +97,12 @@ classdef View < handle
 											  'String', 'Enter', ...
 											  'FontSize', 16, ...
 											  'Visible', 'off');
+			obj.hButtonOnlineControl = uicontrol('Parent', obj.hFigure, ...
+											     'Style', 'pushbutton', ...
+											     'Units', 'normalized', ...
+											     'Position', [0.52 0.28 0.05 0.04], ...
+											     'String', 'OnlineControl', ...
+											     'FontSize', 16);
 			% ===================basic & static figure displays=================
 
 			%  --== including handles
@@ -120,6 +128,7 @@ classdef View < handle
         	set(obj.hButtonAnalyze, 'Callback', @controller.Callback_ButtonAnalyze);
         	set(obj.hEditSplitLines, 'Callback', @controller.Callback_EditSplitLines);
         	set(obj.hButtonSplitLines, 'Callback', @controller.Callback_ButtonSplitLines);
+        	set(obj.hButtonOnlineControl, 'Callback', @controller.Callback_ButtonOnlineControl);
         end
 
         function Init_Folder(obj)
