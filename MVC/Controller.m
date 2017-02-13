@@ -31,13 +31,14 @@ classdef Controller < handle
 			tic
 			disp('Start Button was pressed...');
 			start(obj.hTimerPictures);
-			obj.viewObj.flagEMGWrite2Files = 1; % --record the EMG signal to files
+			obj.viewObj.flagEMGWrite2Files = 1; % --allow to write the EMG signal to files
 		end
 
 		function Callback_ButtonAnalyze(obj, source, eventdata)
 			disp('Analyze Button was pressed...');
 			obj.modelObj.Stop(); disp('Hardware Connection Stop.');
-			obj.viewObj.flagEMGWrite2Files = 0; disp('Stop Writing data to files...');
+			obj.viewObj.flagEMGWrite2Files = 0;  % --stop writing to files...
+			disp('Stop Writing data to files...');
 			delete(obj.hTimerPictures);
 
 			% enlarge the axes for better SplitLines
@@ -57,7 +58,6 @@ classdef Controller < handle
 				XTick = 0:1000:length(data_file);
 				set(obj.viewObj.hAxesEMG(ch), 'XTick', XTick)
 			end
-
 		end
 
 		function Callback_EditSplitLines(obj, source, eventdata)
@@ -82,6 +82,8 @@ classdef Controller < handle
 						 						  'Parent', obj.viewObj.hAxesEMG(ch)) ];
 				end
 			end
+			% --splitting positions are stored in obj.viewObj.xSplitLines, 
+			% --a column vector.
 		end
 
 		function Callback_ButtonSplitLines(obj, source, eventdata)
@@ -93,7 +95,7 @@ classdef Controller < handle
 			xColumn2 = xColumn2 - 1000; % - every 2000samples a second
 			xSplitLinesPaires = [xColumn1, xColumn2];
 
-			disp('Writing to Movement files.');
+			disp('Writing data to name-dependent files.');
 			totalStack = {};
 			for mp=1:(size(xSplitLinesPaires,1)/length(obj.hPicturesStack))
 				totalStack = cat(2, totalStack, obj.hPicturesStack);
@@ -129,7 +131,7 @@ classdef Controller < handle
 			% the End pictures?
 			if( obj.nthPicture == (length(obj.hPicturesStack)+1) )
 				obj.nthPicture = 1;
-				obj.viewObj.flagEMGWrite2Files = 0;
+				obj.viewObj.flagEMGWrite2Files = 0; % --stop writing to files.
 				
 				hPicture = imread(['End', '.jpg']);
 				imshow(hPicture, 'Parent', obj.viewObj.hAxesPictureBed);
