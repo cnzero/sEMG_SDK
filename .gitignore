@@ -8,3 +8,6 @@
 # unnecessary data file, because they are too large.
 *.txt
 *.csv
+
+# testing scripts to be ignored.
+test*
