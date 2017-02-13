@@ -42,7 +42,7 @@ classdef View < handle
 			% ===================basic & static figure displays=================
 			addpath('..\MaxFigure');addpath('..\pictures');addpath('..\Users');
 			obj.Init_Folder();
-			obj.hFigure = figure();maximize(obj.hFigure);
+			obj.hFigure = figure('CloseRequestFcn', @obj.CloseViewFigure);maximize(obj.hFigure);
 			obj.hPanelEMG = uipanel('Parent', obj.hFigure, ...
 								  'Units', 'normalized', ...
 								  'Position', [0 0 0.5 0.96]);
@@ -150,6 +150,7 @@ classdef View < handle
         end
         % -- event [dataEMGChanged] responde function
         function UpdateAxesEMG(obj, source, event)
+        	% -- obj.modelObj.dataEMG, Nx1
         	if obj.flagAxesRefreshing == 1
         		% disp('UpdateAxesEMG...');
 	        	if(length(obj.dataAxesEMG) < 32832)
@@ -164,6 +165,8 @@ classdef View < handle
 	        	for ch=1:1
 	        		data_ch = obj.dataAxesEMG(ch:16:end);
 	        		% set(obj.hPlotsEMG(ch), 'Ydata', data_ch);
+	        		% --compressiong plot-data
+	        		data_ch = data_ch(1:10:end);
 	        		plot(obj.hAxesEMG(ch), data_ch);
 	        		drawnow;
 	        	end
@@ -186,5 +189,13 @@ classdef View < handle
 	        end
         end % ---=== Write2FilesEMG()
 
+        % --==Overwrite the figure closing function -- CloseRequestFcn
+        function CloseViewFigure(obj, source, event)
+        	obj.modelObj.Stop();
+        	clear obj;
+        	clear all;
+        	delete(gcf);
+        	clear classes;
+        end
 	end
 end

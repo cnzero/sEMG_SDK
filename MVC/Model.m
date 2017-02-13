@@ -2,6 +2,14 @@ classdef Model <  handle
 	properties
 		interfaceObjects = {}
 		dataEMG = []
+
+		% Classification modelling parameters
+		lastRealtimeData = []
+		featuresCell = {'SSC', 'ZC', 'WAMP', 'IAV', 'MAV'}
+		LW = 128  % Length of sliding Window
+		LI = 64   % Length of increasing Window
+		LDA_centers
+		LDA_matrix
 	end
 
 	events

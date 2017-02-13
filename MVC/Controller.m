@@ -102,13 +102,12 @@ classdef Controller < handle
 			xSplitLinesPaires = [xColumn1, xColumn2];
 
 			disp('Writing data to name-dependent files.');
-			totalStack = {};
-			for mp=1:(size(xSplitLinesPaires,1)/length(obj.hPicturesStack))
-				totalStack = cat(2, totalStack, obj.hPicturesStack);
-			end
+			xSplitLinesPaires
+			obj.hPicturesStack
+			nTimes = size(xSplitLinesPaires, 1) / length(obj.hPicturesStack);
+			totalNameSequence = repmat(obj.hPicturesStack, 1, nTimes)
 			for xn=1:size(xSplitLinesPaires, 1)
-				nameMovement = totalStack{xn};
-
+				nameMovement = totalNameSequence{xn};
 				a = xSplitLinesPaires(xn, 1);
 				b = xSplitLinesPaires(xn, 2);
 				data_mv = obj.RawData(a:b, :);
@@ -137,15 +136,17 @@ classdef Controller < handle
 			% --=====================features extraction to built Samples Space
 			% --==Settings
 			addpath('..\Classification');
-			featuresCell = {'SSC', 'ZC', 'WAMP', 'IAV', 'MAV'};
-			LW = 128; LI = 64;
 
 			SamplesCell = {};
 			for n=1:length(obj.nameMoveSequence)+1
-				SamplesCell{n} = Rawdata2SampleMatrix(obj.RawDataCell{n}, featuresCell, LW, LI);
+				SamplesCell{n} = Rawdata2SampleMatrix(	obj.RawDataCell{n}, ...
+														obj.modelObj.featuresCell, ...
+														obj.modelObj.LW, ...
+														obj.modelObj.LI ...
+													 );
 			end
 			% --=======================Classification modelling
-			[LDA_centers, LDA_matrix] = LDA_Reduction(SamplesCell, 3)
+			[obj.modelObj.LDA_centers, obj.modelObj.LDA_matrix] = LDA_Reduction(SamplesCell, 3)
 
 			% --==Hardware event subscription
 			obj.modelObj.addlistener('eventEMGChanged', @obj.RealTimeClassify);
@@ -153,11 +154,42 @@ classdef Controller < handle
 
 		end
 		function RealTimeClassify(obj, source, event)
-			% acquire the latest EMG data
-			% feature extraction
+			% --==acquire the latest EMG data
+			% obj.modelObj.dataEMG, Nx1
+			dataOnline = reshape(obj.modelObj.dataEMG, 16, []);
+			realtimeData = dataOnline(obj.viewObj.hChannels, :);
+			realtimeData = realtimeData';
+			% Lxnch
+			% -- Compare realtimeData length with sliding window length
+			if size(realtimeData, 1) < obj.modelObj.LW
+				realtimeData = [obj.modelObj.lastRealtimeData; ...
+								realtimeData];
+			else
+				% --==feature extraction
+				realtimeSampleMatrix = Rawdata2SampleMatrix( realtimeData, ...
+															 obj.modelObj.featuresCell, ...
+															 obj.modelObj.LW, ...
+															 obj.modelObj.LI ...
+															);
+				% --(nch*nf) X nW, every row is a sample
+
+				% --==classification result label
+				nLabel = NearestDistance(realtimeSampleMatrix, ...
+										 obj.modelObj.LDA_centers, ...
+										 obj.modelObj.LDA_matrix);
+				if nLabel == 1
+					hPicture = imread(['Snooze', '.jpg']);
+				else
+					hPicture = imread([obj.nameMoveSequence{nLabel-1}, '.jpg']);
+				end
+				imshow(hPicture, 'Parent', obj.viewObj.hAxesPictureBed);
+				drawnow;
+			end
+
+			
+		    
 			% classification modelling
 			% hardware control objects command
-			disp('eventEMGChanged ...');
 		end
 		function TimerFcn_PicturesChanging(obj, source, eventdata)
 			% the End pictures?
@@ -176,8 +208,7 @@ classdef Controller < handle
 				toc
 				obj.nthPicture = obj.nthPicture + 1;
 			end
-			
-
 		end
 	end
 end
+
