@@ -24,7 +24,7 @@ function sampleMatrix = Rawdata2SampleMatrix(Rawdata, featuresCell, LW, LI)
 	% features extraction functions path
 	addpath('..\FeaturesExtraction');
 	% sliding window algorithm
-	[L, nCh] = size(Rawdata, 1);
+	[L, nCh] = size(Rawdata);
 	nWindows = floor((L-LW)/LI);
 	nFeatures = length(featuresCell);
 	sampleMatrix = [];

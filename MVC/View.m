@@ -160,7 +160,8 @@ classdef View < handle
 	        						   obj.modelObj.dataEMG];
 	        	end
 	        	% --==seperate [obj.dataAxesEMG] into 16-Channel-Axes
-	        	for ch=1:length(obj.hPlotsEMG)
+	        	% for ch=1:length(obj.hPlotsEMG)
+	        	for ch=1:1
 	        		data_ch = obj.dataAxesEMG(ch:16:end);
 	        		% set(obj.hPlotsEMG(ch), 'Ydata', data_ch);
 	        		plot(obj.hAxesEMG(ch), data_ch);

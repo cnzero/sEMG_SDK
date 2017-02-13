@@ -6,18 +6,24 @@ classdef Controller < handle
 		% pictures changing
 		nthPicture = 1
 		hTimerPictures
-		hPicturesStack = {'Snooze', ...
-						  'Grasp', ...
-						  'Snooze', ...
-						  'Open'}
-						  % 'Snooze', ...
-						  % 'Index'}
+		hPicturesStack
+		nameMoveSequence = {'Grasp', 'Open'};
+		% nameMoveSequence = {'Grasp', 'Open', 'Index', 'Middle'};
 		RawData = []
 		% dimensions: (2000*t) X nCh
+		RawDataCell = {};
 	end
 
 	methods
 		function obj = Controller(viewObj0, modelObj0)
+			% --Init hPicturesStack
+			nameSnoozeSequence = repmat({'Snooze'}, size(obj.nameMoveSequence));
+			Sequence = {};
+			Sequence(1, :) = nameSnoozeSequence;
+			Sequence(2, :) = obj.nameMoveSequence;
+			obj.hPicturesStack = reshape(Sequence, 1, []);
+			% --End, Example, {'Snooze', 'Grasp', 'Snooze', 'Open'}
+
 			obj.viewObj = viewObj0;
 			obj.modelObj = modelObj0;
 			obj.hTimerPictures = timer('Period', 3, ...
@@ -101,31 +107,57 @@ classdef Controller < handle
 				totalStack = cat(2, totalStack, obj.hPicturesStack);
 			end
 			for xn=1:size(xSplitLinesPaires, 1)
-				nameMovement = totalStack{xn}
+				nameMovement = totalStack{xn};
 
 				a = xSplitLinesPaires(xn, 1);
 				b = xSplitLinesPaires(xn, 2);
 				data_mv = obj.RawData(a:b, :);
 				dlmwrite([obj.viewObj.folder_name, '\EMG\', nameMovement, '.txt'], data_mv, '-append');
 			end
+			% --==view to restore
+			set(obj.viewObj.hPanelEMG, 'Position', [0 0 0.5 0.96]);
+			set(obj.viewObj.hTextSplitLines, 'Visible', 'off');
+			set(obj.viewObj.hEditSplitLines, 'Visible', 'off');
+			set(obj.viewObj.hButtonSplitLines, 'Visible', 'off');
 		end
 
 		function Callback_ButtonOnlineControl(obj, source, eventdata)
-			% features extraction
+			% --======================load offline files
+			% --Snooze
+			hdata = load([obj.viewObj.folder_name, '\EMG\', 'Snooze', '.txt']);
+			% --L1 X nch
+			obj.RawDataCell{1} = hdata;
 
-			% modelling
+			for xn=1:length(obj.nameMoveSequence)
+				nameMovement = obj.nameMoveSequence{xn};
+				hdata = load([obj.viewObj.folder_name, '\EMG\', nameMovement, '.txt']);
+				obj.RawDataCell{xn+1} = hdata;
+			end
 
-			% training data accuracy computation
+			% --=====================features extraction to built Samples Space
+			% --==Settings
+			addpath('..\Classification');
+			featuresCell = {'SSC', 'ZC', 'WAMP', 'IAV', 'MAV'};
+			LW = 128; LI = 64;
 
-			% [listdlg] or [questdlg] to 
-				% 1. show trainingset accuracy
-				% 2. show testingset accuracy
-				% 3. go on to online-control or not
-				% 4. select a control objects
-					% 1. pictures showing
-					% 2. iLimb
-					% 3. KangfuHand
-					% 4. VirtualHand
+			SamplesCell = {};
+			for n=1:length(obj.nameMoveSequence)+1
+				SamplesCell{n} = Rawdata2SampleMatrix(obj.RawDataCell{n}, featuresCell, LW, LI);
+			end
+			% --=======================Classification modelling
+			[LDA_centers, LDA_matrix] = LDA_Reduction(SamplesCell, 3)
+
+			% --==Hardware event subscription
+			obj.modelObj.addlistener('eventEMGChanged', @obj.RealTimeClassify);
+			obj.modelObj.Start();
+
+		end
+		function RealTimeClassify(obj, source, event)
+			% acquire the latest EMG data
+			% feature extraction
+			% classification modelling
+			% hardware control objects command
+			disp('eventEMGChanged ...');
 		end
 		function TimerFcn_PicturesChanging(obj, source, eventdata)
 			% the End pictures?
@@ -137,7 +169,7 @@ classdef Controller < handle
 				imshow(hPicture, 'Parent', obj.viewObj.hAxesPictureBed);
 				drawnow;
 			else
-				namePicture = obj.hPicturesStack{obj.nthPicture};
+				namePicture = obj.hPicturesStack{obj.nthPicture}
 				hPicture = imread([namePicture, '.jpg']);
 				imshow(hPicture, 'Parent', obj.viewObj.hAxesPictureBed);
 				drawnow;

@@ -1,15 +1,15 @@
 % function description
 % Input: 
-% 		Samples_Cell, nx1-Cell, every cell is a supervised cluster.
-% 					  n, number of clusters or movement.
-% 		d, number of reduction dimension.
+% 		[Samples_Cell], nx1-Cell, every cell is a supervised cluster.
+% 					    n, number of clusters or movement.
+% 		[d], number of reduction dimension.
 
 % Output:
-% 		centers, center of every conrresponding supervised cluster.
+% 		[centers], center of every conrresponding supervised cluster.
 % 			nxd
-% 		LDA_matrix, the dimension-reduction matrix with Principle Component Analysis.
-% 			(n_ch x n_f) x d
-% 			Width x d
+% 		[LDA_matrix], the dimension-reduction matrix with Principle Component Analysis.
+% 					  (n_ch x n_f) x d
+% 					  Width x d
 % Attention:
 % 		LDA algorithm do not need pre-processing.
 function [LDA_centers, LDA_matrix] = LDA_Reduction(Samples_Cell, d)
@@ -20,10 +20,11 @@ function [LDA_centers, LDA_matrix] = LDA_Reduction(Samples_Cell, d)
 	SUM = zeros(1, Width);
 	n_mv = length(Samples_Cell);
 	Specimen_Counts = 0;
-	for mv=1:
+	for mv=1:n_mv
 		Specimen_Counts = Specimen_Counts + size(Samples_Cell{mv}, 1);
 		center(mv, :) = mean(Samples_Cell{mv}, 1);
-		temp = Samples_Cell{mv} - repmat(center(mv, :), Specimen_Counts, 1);
+		% temp = Samples_Cell{mv} - repmat(center(mv, :), Specimen_Counts, 1);
+		temp = Samples_Cell{mv} - repmat(center(mv, :), size(Samples_Cell{mv}, 1), 1);
 		xSw = xSw + temp'*temp;
 		SUM = SUM + sum(Samples_Cell{mv}, 1);
 	end
