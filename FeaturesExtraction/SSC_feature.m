@@ -1,5 +1,6 @@
 %[SSC-Slope Sign Change] feature
-function feature = SSC_feature(data_TimeWindow, DeadZone)
+function feature = SSC_feature(data_TimeWindow)
+	DeadZone = 0;
 	data_size = length(data_TimeWindow);
 	feature = 0;
 

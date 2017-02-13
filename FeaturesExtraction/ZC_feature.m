@@ -1,5 +1,6 @@
 %[ZC-zero crossing] feature
-function feature = ZC_feature(data_TimeWindow, DeadZone)
+function feature = ZC_feature(data_TimeWindow)
+	DeadZone = 0;
 	data_size = length(data_TimeWindow);
 	feature = 0;
 

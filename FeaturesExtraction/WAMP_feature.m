@@ -1,5 +1,6 @@
 %-[WA-Willison Amplitude] feature
-function feature = WA_feature(data_TimeWindow, Threshold)
+function feature = WAMP_feature(data_TimeWindow)
+	Threshold = 0;
 	data_size = length(data_TimeWindow);
 	feature = 0;
 	if data_size == 0
