@@ -1,4 +1,4 @@
-function ArduinoUno_Rest(Hand)
+function ArduinoUno_Snooze(Hand)
     writePWMDutyCycle(Hand.Uno, Hand.Finger{1}, 0.3);
     writePWMDutyCycle(Hand.Uno, Hand.Finger{2}, 0.3);
     writePWMDutyCycle(Hand.Uno, Hand.Finger{3}, 0.3);
