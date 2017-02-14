@@ -11,7 +11,10 @@ classdef Controller < handle
 		% nameMoveSequence = {'Grasp', 'Open', 'Index', 'Middle'};
 		RawData = []
 		% dimensions: (2000*t) X nCh
-		RawDataCell = {};
+		RawDataCell = {}
+
+		% --Control Objects
+		hand
 	end
 
 	methods
@@ -150,6 +153,15 @@ classdef Controller < handle
 
 			% --==Hardware event subscription
 			obj.modelObj.addlistener('eventEMGChanged', @obj.RealTimeClassify);
+			% --== Control Object Initialization
+			% -----iLimb
+			% -----KangfuHand
+			% -----VirtualHand
+			addpath('..\ControlObjects\UNO4KangfuHandAPI');
+			obj.hand = ArduinoUno_Init();
+			disp('Arduino UNO Connection Initialization...');
+			pause(3);
+
 			obj.modelObj.Start();
 
 		end
@@ -179,12 +191,18 @@ classdef Controller < handle
 										 obj.modelObj.LDA_matrix);
 				if nLabel == 1
 					hPicture = imread(['Snooze', '.jpg']);
+					hControlObj_func = str2func(['ArduinoUno_', 'Snooze']); 
 				else
 					hPicture = imread([obj.nameMoveSequence{nLabel-1}, '.jpg']);
+					hControlObj_func = str2func(['ArduinoUno_', ...
+												 obj.nameMoveSequence{nLabel-1}]);
 				end
 				imshow(hPicture, 'Parent', obj.viewObj.hAxesPictureBed);
+				hControlObj_func(obj.hand);
 				drawnow;
 			end
+			% --update [obj.modelObj.lastRealtimeData]
+			obj.modelObj.lastRealtimeData = realtimeData;
 
 			
 		    
